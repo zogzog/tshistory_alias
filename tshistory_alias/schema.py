@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, String, DateTime, UniqueConstraint, Date, Float, Boolean
-from sqlalchemy.dialects.postgresql import JSONB
+from tshistory.schema import meta, init as tshinit, reset as tshreset
 from sqlalchemy.schema import CreateSchema
 
 outliers = None
@@ -10,7 +10,7 @@ arithmetic = None
 def define_schema(meta):
     _outliers = Table(
         'outliers', meta,
-        Column('serie', String, primary_key=True),
+        Column('serie', String, primary_key=True, unique=True),
         Column('min', Float),
         Column('max', Float),
         schema='alias'
@@ -44,6 +44,7 @@ def define_schema(meta):
 
 
 def init(engine, meta):
+    tshinit(engine, meta)
     define_schema(meta)
     engine.execute(CreateSchema('alias'))
     for table in (outliers, priority, arithmetic):
@@ -51,4 +52,5 @@ def init(engine, meta):
 
 
 def reset(engine):
+    tshreset(engine)
     engine.execute('drop schema if exists alias cascade')
