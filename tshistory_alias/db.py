@@ -44,14 +44,34 @@ def avaibility_alias(cn, alias):
 
 
 
-def build_priority(cn, alias, list_names):
+def build_priority(cn, alias, list_names,
+                   map_prune=None,
+                   map_read_only=None,
+                   map_coef=None):
 
     avaibility_alias(cn, alias)
     table = schema.priority
     for priority, name in enumerate(list_names):
-        insert_sql = table.insert(values={'alias':alias,
-                                          'serie': name,
-                                          'priority': priority})
+        values = {'alias': alias,
+                  'serie': name,
+                  'priority': priority,
+                  }
+        if map_prune and name in map_prune:
+            values['prune'] = map_prune[name]
+        if map_read_only and name in map_read_only:
+            values['read_only'] = map_read_only[name]
+        if map_coef and name in map_coef:
+            values['coefficient'] = map_coef[name]
+
+        insert_sql = table.insert(values)
         cn.execute(insert_sql)
 
+def build_arithmetic(cn, alias, map_coef):
+
+    for sn, coef in map_coef.items():
+        value = {'alias': alias,
+                 'serie': sn,
+                 'coefficient': coef
+        }
+        cn.execute(insert(schema.arithmetic).values(value))
 
