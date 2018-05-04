@@ -22,7 +22,7 @@ def define_schema(meta):
         Column('alias', String, nullable=False, index=True),
         Column('serie', String, nullable=False, index=True),
         Column('priority', Integer, nullable=False),
-        Column('coefficient', Float, default=1),
+        Column('coefficient', Float),
         Column('prune', Integer, default=0),
         Column('read_only', Boolean, default=False),
         schema='alias'
