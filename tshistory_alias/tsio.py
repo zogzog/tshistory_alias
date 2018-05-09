@@ -7,17 +7,52 @@ from tshistory_alias import schema
 
 class TimeSerie(BaseTs):
 
-    def get_bounds(self, cn, name, from_value_date=None, to_value_date=None,
-                    revision_date=None, remove_outliers=False):
+    def insert(self, cn, newts, name, author=None, _insertion_date=None,
+               extra_scalars={}):
 
-        ts = super(TimeSerie, self).get(cn, name, revision_date,
-                                        from_value_date=from_value_date,
-                                        to_value_date=to_value_date
-                                        )
+        serie_type = self._typeofserie(cn, name)
+        if serie_type is None or serie_type == 'primary':
+            super(TimeSerie, self).insert(cn, newts, name,
+                                          author=author,
+                                          _insertion_date=_insertion_date,
+                                          extra_scalars=extra_scalars)
+        else:
+            raise Exception('Serie {} is trying to be inserted, but is of type {}'.format(
+                name, serie_type
+            ))
 
+    def get(self, cn, name, revision_date=None,
+            from_value_date=None, to_value_date=None):
+
+        serie_type = self._typeofserie(cn, name)
+        ts = None
+        if serie_type == 'primary':
+            ts = super(TimeSerie, self).get(cn, name, revision_date,
+                                            from_value_date=from_value_date,
+                                            to_value_date=to_value_date
+                                            )
+        elif serie_type == 'priority':
+            ts, _ = self.get_priority(cn, name, revision_date,
+                                            from_value_date=from_value_date,
+                                            to_value_date=to_value_date
+                                            )
+        elif serie_type == 'arithmetic':
+            ts = self.get_arithmetic(cn, name, revision_date,
+                                            from_value_date=from_value_date,
+                                            to_value_date=to_value_date
+                                            )
+
+        if ts is not None:
+            ts = self.apply_bounds(cn, ts)
+
+        return ts
+
+    def apply_bounds(self, cn, ts):
+
+        name = ts.name
         outliers = schema.outliers
         presence = exists().where(outliers.c.serie == name)
-        if not remove_outliers or not cn.execute(select([presence])).scalar():
+        if not cn.execute(select([presence])).scalar():
             return ts
 
         mini, maxi = cn.execute(select([outliers.c.min, outliers.c.max]
@@ -28,15 +63,6 @@ class TimeSerie(BaseTs):
             ts = ts[ts <= maxi]
 
         return ts
-
-    # from data_hub.tsio...
-    def _apply_priority(self, ts_result, ts_new, remove, index=None):
-        if index is not None:
-            ts_new = ts_new[index]
-        if remove:
-            ts_new = ts_new[:-remove]
-        combine = self._apply_diff(ts_result, ts_new)
-        return combine
 
     def get_priority(self, cn, alias,
                      revision_date=None,
@@ -50,10 +76,10 @@ class TimeSerie(BaseTs):
         for row in df.itertuples():
             name = row.serie
             prune = row.prune
-            ts = super(TimeSerie, self).get(cn, name, revision_date,
-                                            from_value_date=from_value_date,
-                                            to_value_date=to_value_date
-                                            )
+            ts = self.get(cn, name, revision_date,
+                          from_value_date=from_value_date,
+                          to_value_date=to_value_date
+                          )
             if ts is None:
                 continue
             if (not pd.isnull(row.coefficient) and
@@ -71,12 +97,14 @@ class TimeSerie(BaseTs):
         return ts_values, ts_origins
 
     def get_arithmetic(self, cn, alias,
+                        revision_date=None,
                         from_value_date=None,
                         to_value_date=None):
+
         df = pd.read_sql('''select * from alias.arithmetic where alias = '{}' '''.format(alias), cn)
         first_iteration=True
         for row in df.itertuples():
-            ts = self.get(cn, row.serie,
+            ts = self.get(cn, row.serie, revision_date,
                           from_value_date=from_value_date,
                           to_value_date=to_value_date)
             if ts is None:
@@ -91,3 +119,23 @@ class TimeSerie(BaseTs):
         ts_result.name = alias
 
         return ts_result
+
+    def _typeofserie(self, cn, name):
+        presence = exists().where(schema.priority.c.alias == name)
+        if cn.execute(select([presence])).scalar():
+            return 'priority'
+        presence = exists().where(schema.arithmetic.c.alias == name)
+        if cn.execute(select([presence])).scalar():
+            return 'arithmetic'
+        if self.exists(cn, name):
+            return 'primary'
+        return None
+
+    # from data_hub.tsio...
+    def _apply_priority(self, ts_result, ts_new, remove, index=None):
+        if index is not None:
+            ts_new = ts_new[index]
+        if remove:
+            ts_new = ts_new[:-remove]
+        combine = self._apply_diff(ts_result, ts_new)
+        return combine

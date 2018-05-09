@@ -43,7 +43,6 @@ def avaibility_alias(cn, alias):
         raise Exception('{} already used as an arithmetic alias'.format(alias))
 
 
-
 def build_priority(cn, alias, list_names,
                    map_prune=None,
                    map_read_only=None,
@@ -66,8 +65,10 @@ def build_priority(cn, alias, list_names,
         insert_sql = table.insert(values)
         cn.execute(insert_sql)
 
+
 def build_arithmetic(cn, alias, map_coef):
 
+    avaibility_alias(cn, alias)
     for sn, coef in map_coef.items():
         value = {'alias': alias,
                  'serie': sn,
