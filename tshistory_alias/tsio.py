@@ -70,27 +70,6 @@ class TimeSerie(BaseTs):
 
         return ts_values, ts_origins
 
-    def insert_priority(self, cn, ts_pushed, alias, author):
-
-        df = pd.read_sql('''select * from alias.priority as pr where pr.alias = '{}' order by priority desc'''.format(alias), cn)
-        last_name = df['serie'].iloc[0]
-        df_reduct = df[~df['read_only']]
-        if len(df_reduct) == 0:  # ie all the series are in read_only
-            return
-        if len(df) > 1:
-            _, ts_origin = self.get_priority(cn, alias,
-                                             from_value_date=min(ts_pushed.index),
-                                             to_value_date=max(ts_pushed.index))
-            ts_origin[ts_origin.isnull()] = last_name
-        else:
-            ts_origin = pd.Series([last_name] * len(ts_pushed),
-                                  index=ts_pushed.index)
-        for row in df_reduct.itertuples():
-            ts_idoine = ts_pushed[ts_origin == row.serie]
-            if row.coefficient and ts_idoine.dtype != 'O':
-                ts_idoine = ts_idoine / row.coefficient
-            self.insert(cn, ts_idoine, row.serie, author, extra_scalars = dict(manual=True))
-
     def get_arithmetic(self, cn, alias,
                         from_value_date=None,
                         to_value_date=None):

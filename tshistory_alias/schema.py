@@ -24,7 +24,6 @@ def define_schema(meta):
         Column('priority', Integer, nullable=False),
         Column('coefficient', Float),
         Column('prune', Integer, default=0),
-        Column('read_only', Boolean, default=False),
         schema='alias'
     )
 

@@ -169,70 +169,6 @@ def test_combine(engine, tsh):
 2010-01-20    forecasted
     """, origin)
 
-    # Now, after our import, we manualy change some values that we want to insert
-    # in the proper place, with the same prune parameter
-    ts_pushed = values.copy()
-    ts_pushed['2010-01-05'] = 1.1
-    ts_pushed['2010-01-16'] = 3.1
-    ts_pushed = ts_pushed[2:19]  # some size reduction, for the sake of entropy
-
-    tsh.insert_priority(engine,
-                         ts_pushed,
-                         'serie6',
-                         'author_test',
-                         )
-
-    # here are the result values
-    values, origin = tsh.get_priority(engine,'serie6')
-
-
-    assert_df("""
-2010-01-01    1.0
-2010-01-02    1.0
-2010-01-03    1.0
-2010-01-04    1.0
-2010-01-05    1.1
-2010-01-06    1.0
-2010-01-07    1.0
-2010-01-08    1.0
-2010-01-09    1.0
-2010-01-10    2.0
-2010-01-11    2.0
-2010-01-12    3.0
-2010-01-13    3.0
-2010-01-14    3.0
-2010-01-15    3.0
-2010-01-16    3.1
-2010-01-17    3.0
-2010-01-18    3.0
-2010-01-19    3.0
-2010-01-20    3.0
-    """, values)
-
-    # assert_df("""
-    # 2010-01-01    False
-    # 2010-01-02    False
-    # 2010-01-03    False
-    # 2010-01-04    False
-    # 2010-01-05     True
-    # 2010-01-06    False
-    # 2010-01-07    False
-    # 2010-01-08    False
-    # 2010-01-09    False
-    # 2010-01-10    False
-    # 2010-01-11    False
-    # 2010-01-12    False
-    # 2010-01-13    False
-    # 2010-01-14    False
-    # 2010-01-15    False
-    # 2010-01-16     True
-    # 2010-01-17    False
-    # 2010-01-18    False
-    # 2010-01-19    False
-    # 2010-01-20    False
-    # """, marker)
-
-    # we try a bogus prune of data, i.e. remove more than there are data...
 
     build_priority(engine, 'serie7',
                    ['realised', 'nominated', 'forecasted'],
@@ -265,102 +201,6 @@ def test_combine(engine, tsh):
     """, origin)
     # nice
 
-    # read only test:
-
-    build_priority(engine, 'serie8',
-                   ['realised', 'nominated', 'forecasted'],
-                   map_prune={'realised': 1, 'nominated': 1, 'forecasted': 0},
-                   map_read_only = {'realised': True, 'nominated': False, 'forecasted': True})
-
-
-    ts_modif =  genserie(datetime(2010, 1, 1), 'D', 20, [-10])
-    tsh.insert_priority(engine, ts_modif, 'serie8', 'test')
-    values, origin =  tsh.get_priority(engine,'serie8')
-
-    assert_df("""
-2010-01-01     1.0
-2010-01-02     1.0
-2010-01-03     1.0
-2010-01-04     1.0
-2010-01-05     1.1
-2010-01-06     1.0
-2010-01-07     1.0
-2010-01-08     1.0
-2010-01-09     1.0
-2010-01-10   -10.0
-2010-01-11   -10.0
-2010-01-12     3.0
-2010-01-13     3.0
-2010-01-14     3.0
-2010-01-15     3.0
-2010-01-16     3.1
-2010-01-17     3.0
-2010-01-18     3.0
-2010-01-19     3.0
-2010-01-20     3.0
-        """, values)
-
-    # coef:
-    build_priority(engine, 'serie9',
-                   ['realised', 'nominated', 'forecasted'],
-                   map_prune={'realised': 1, 'nominated': 1, 'forecasted': 0},
-                   map_read_only = {'realised': True},
-                   map_coef = {'nominated': 2, 'forecasted': 3})
-
-    values, origin =  tsh.get_priority(engine,'serie9')
-    assert_df("""
-2010-01-01     1.0
-2010-01-02     1.0
-2010-01-03     1.0
-2010-01-04     1.0
-2010-01-05     1.1
-2010-01-06     1.0
-2010-01-07     1.0
-2010-01-08     1.0
-2010-01-09     1.0
-2010-01-10   -20.0
-2010-01-11   -20.0
-2010-01-12     9.0
-2010-01-13     9.0
-2010-01-14     9.0
-2010-01-15     9.0
-2010-01-16     9.3
-2010-01-17     9.0
-2010-01-18     9.0
-2010-01-19     9.0
-2010-01-20     9.0
-            """, values)
-
-    ts_modif =  genserie(datetime(2010, 1, 1), 'D', 20, [-1])
-    tsh.insert_priority(engine, ts_modif, 'serie9', 'test')
-
-    values, origin =  tsh.get_priority(engine,'serie9')
-
-    assert_df("""
-2010-01-01    1.0
-2010-01-02    1.0
-2010-01-03    1.0
-2010-01-04    1.0
-2010-01-05    1.1
-2010-01-06    1.0
-2010-01-07    1.0
-2010-01-08    1.0
-2010-01-09    1.0
-2010-01-10   -1.0
-2010-01-11   -1.0
-2010-01-12   -1.0
-2010-01-13   -1.0
-2010-01-14   -1.0
-2010-01-15   -1.0
-2010-01-16   -1.0
-2010-01-17   -1.0
-2010-01-18   -1.0
-2010-01-19   -1.0
-2010-01-20   -1.0
-            """, values)
-
-
-    # more test to be found and may be adapted from data_hub
 
 def test_arithmetic(engine, tsh):
 
@@ -416,6 +256,7 @@ def test_arithmetic(engine, tsh):
 
     assert 'unknown is needed to calculate bogus and does not exist' ==  str(err.value)
 
+    # tester prune sur une série unique et/ou sur la série la moins prioritaire
 
 def test_errors():
 
