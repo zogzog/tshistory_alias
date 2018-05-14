@@ -12,10 +12,11 @@ class TimeSerie(BaseTs):
 
         serie_type = self._typeofserie(cn, name)
         if serie_type is None or serie_type == 'primary':
-            super(TimeSerie, self).insert(cn, newts, name,
+            diff = super(TimeSerie, self).insert(cn, newts, name,
                                           author=author,
                                           _insertion_date=_insertion_date,
                                           extra_scalars=extra_scalars)
+            return diff
         else:
             raise Exception('Serie {} is trying to be inserted, but is of type {}'.format(
                 name, serie_type
