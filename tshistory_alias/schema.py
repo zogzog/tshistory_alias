@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, Integer, String, DateTime, UniqueConstraint, Date, Float, Boolean
-from tshistory.schema import meta, init as tshinit, reset as tshreset
+from tshistory.schema import delete_schema, init as tshinit, reset as tshreset
 from sqlalchemy.schema import CreateSchema
 
 outliers = None
@@ -44,6 +44,8 @@ def define_schema(meta):
 
 def init(engine, meta):
     tshinit(engine, meta)
+    tshinit(engine, meta, 'tsh-automatic')
+    tshinit(engine, meta, 'tsh-manual')
     define_schema(meta)
     engine.execute(CreateSchema('alias'))
     for table in (outliers, priority, arithmetic):
@@ -52,4 +54,6 @@ def init(engine, meta):
 
 def reset(engine):
     tshreset(engine)
+    delete_schema(engine, 'tsh-automatic')
+    delete_schema(engine, 'tsh-manual')
     engine.execute('drop schema if exists alias cascade')

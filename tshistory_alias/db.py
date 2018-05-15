@@ -1,5 +1,8 @@
 from sqlalchemy import exists, select, MetaData
 from sqlalchemy.dialects.postgresql import insert
+import pandas as pd
+import numpy as np
+
 
 from tshistory_alias import schema
 from tshistory.schema import tsschema
@@ -45,7 +48,6 @@ def avaibility_alias(cn, alias):
 
 def build_priority(cn, alias, list_names,
                    map_prune=None,
-                   map_read_only=None,
                    map_coef=None):
 
     avaibility_alias(cn, alias)
@@ -57,14 +59,27 @@ def build_priority(cn, alias, list_names,
                   }
         if map_prune and name in map_prune:
             values['prune'] = map_prune[name]
-        if map_read_only and name in map_read_only:
-            values['read_only'] = map_read_only[name]
         if map_coef and name in map_coef:
             values['coefficient'] = map_coef[name]
-
         insert_sql = table.insert(values)
         cn.execute(insert_sql)
 
+
+def register_priority(cn, path):
+    df = pd.read_csv(path)
+    list_alias = np.unique(df['alias'])
+    map_prune = {}
+    map_coef = {}
+    for alias in list_alias:
+        sub_df = df[df['alias'] == alias]
+        sub_df = sub_df.sort_values(by='priority')
+        list_names = sub_df['serie']
+        for row in sub_df.itertuples():
+            if not pd.isnull(row.prune):
+                map_prune[row.serie] = row.prune
+            if not pd.isnull(row.coefficient):
+                map_coef[row.serie] = row.coefficient
+        build_priority(cn, alias, list_names, map_prune, map_coef)
 
 def build_arithmetic(cn, alias, map_coef):
 

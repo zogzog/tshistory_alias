@@ -1,21 +1,23 @@
 from sqlalchemy import exists, select
 import pandas as pd
 
-from tshistory.tsio import TimeSerie as BaseTs
-
+from tshistory.util import SeriesServices
+from tshistory_supervision.tsio import TimeSerie as BaseTs
 from tshistory_alias import schema
+
+service = SeriesServices()
 
 class TimeSerie(BaseTs):
 
     def insert(self, cn, newts, name, author=None, _insertion_date=None,
-               extra_scalars={}):
+               manual=False):
 
         serie_type = self._typeofserie(cn, name)
         if serie_type is None or serie_type == 'primary':
             diff = super(TimeSerie, self).insert(cn, newts, name,
                                           author=author,
                                           _insertion_date=_insertion_date,
-                                          extra_scalars=extra_scalars)
+                                          manual=manual)
             return diff
         else:
             raise Exception('Serie {} is trying to be inserted, but is of type {}'.format(
@@ -138,5 +140,5 @@ class TimeSerie(BaseTs):
             ts_new = ts_new[index]
         if remove:
             ts_new = ts_new[:-remove]
-        combine = self._apply_diff(ts_result, ts_new)
+        combine = service.patch(ts_result, ts_new)
         return combine
