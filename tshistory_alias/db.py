@@ -26,25 +26,35 @@ def add_bounds(cn, sn, min=None, max=None):
     print('insert {} in outliers table'.format(sn))
 
 
-def avaibility_alias(cn, alias):
+def avaibility_alias(cn, alias, warning=False):
 
     original_schema = tsschema('tsh')
     table = original_schema.registry
 
+    action = Exception if not warning else Warning
+
     presence = exists().where(table.c.name == alias)
+    msg = None
     if cn.execute(select([presence])).scalar():
-        raise Exception('{} already used as a primary name'.format(alias))
+        msg ='{} already used as a primary name'.format(alias)
 
     table = schema.priority
     presence = exists().where(table.c.alias == alias)
     if cn.execute(select([presence])).scalar():
-        raise Exception('{} already used as a priority alias'.format(alias))
+        msg = '{} already used as a priority alias'.format(alias)
 
     table = schema.arithmetic
     presence = exists().where(table.c.alias == alias)
     if cn.execute(select([presence])).scalar():
-        raise Exception('{} already used as an arithmetic alias'.format(alias))
+        msg = '{} already used as an arithmetic alias'.format(alias)
 
+    if msg:
+        if warning:
+            Warning(msg)
+            return False
+        else:
+            raise Exception(msg)
+    return True
 
 def build_priority(cn, alias, list_names,
                    map_prune=None,
@@ -71,6 +81,8 @@ def register_priority(cn, path):
     map_prune = {}
     map_coef = {}
     for alias in list_alias:
+        if not avaibility_alias(cn, alias, warning=True):
+            continue
         sub_df = df[df['alias'] == alias]
         sub_df = sub_df.sort_values(by='priority')
         list_names = sub_df['serie']
@@ -96,9 +108,9 @@ def build_arithmetic(cn, alias, map_coef):
 def register_arithmetic(cn, path):
     df = pd.read_csv(path)
     list_alias = np.unique(df['alias'])
-    map_coef = {}
     for alias in list_alias:
+        if not avaibility_alias(cn, alias, warning=True):
+            continue
         sub_df = df[df['alias'] == alias]
-        list_names = sub_df['serie']
         map_coef = {row.serie: row.coefficient for row in sub_df.itertuples()}
         build_arithmetic(cn, alias, map_coef)
