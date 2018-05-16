@@ -25,24 +25,25 @@ class TimeSerie(BaseTs):
             ))
 
     def get(self, cn, name, revision_date=None,
-            from_value_date=None, to_value_date=None):
+            from_value_date=None, to_value_date=None, _keep_nans=False):
 
         serie_type = self._typeofserie(cn, name)
         ts = None
         if serie_type == 'primary':
             ts = super(TimeSerie, self).get(cn, name, revision_date,
                                             from_value_date=from_value_date,
-                                            to_value_date=to_value_date
+                                            to_value_date=to_value_date,
+                                            _keep_nans=_keep_nans
                                             )
         elif serie_type == 'priority':
             ts, _ = self.get_priority(cn, name, revision_date,
                                             from_value_date=from_value_date,
-                                            to_value_date=to_value_date
+                                            to_value_date=to_value_date,
                                             )
         elif serie_type == 'arithmetic':
             ts = self.get_arithmetic(cn, name, revision_date,
                                             from_value_date=from_value_date,
-                                            to_value_date=to_value_date
+                                            to_value_date=to_value_date,
                                             )
 
         if ts is not None:
