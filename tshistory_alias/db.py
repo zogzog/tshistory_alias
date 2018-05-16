@@ -81,6 +81,7 @@ def register_priority(cn, path):
                 map_coef[row.serie] = row.coefficient
         build_priority(cn, alias, list_names, map_prune, map_coef)
 
+
 def build_arithmetic(cn, alias, map_coef):
 
     avaibility_alias(cn, alias)
@@ -91,3 +92,13 @@ def build_arithmetic(cn, alias, map_coef):
         }
         cn.execute(insert(schema.arithmetic).values(value))
 
+
+def register_arithmetic(cn, path):
+    df = pd.read_csv(path)
+    list_alias = np.unique(df['alias'])
+    map_coef = {}
+    for alias in list_alias:
+        sub_df = df[df['alias'] == alias]
+        list_names = sub_df['serie']
+        map_coef = {row.serie: row.coefficient for row in sub_df.itertuples()}
+        build_arithmetic(cn, alias, map_coef)
