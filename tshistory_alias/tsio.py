@@ -24,24 +24,33 @@ class TimeSerie(BaseTs):
                 name, serie_type
             ))
 
-    def get(self, cn, name, revision_date=None,
+    def get(self, cn, name, revision_date=None, delta=None,
             from_value_date=None, to_value_date=None, _keep_nans=False):
 
         serie_type = self._typeofserie(cn, name)
         ts = None
         if serie_type == 'primary':
-            ts = super(TimeSerie, self).get(cn, name, revision_date,
-                                            from_value_date=from_value_date,
-                                            to_value_date=to_value_date,
-                                            _keep_nans=_keep_nans
-                                            )
+            if not delta:
+                ts = super(TimeSerie, self).get(cn, name, revision_date,
+                                                from_value_date=from_value_date,
+                                                to_value_date=to_value_date,
+                                                _keep_nans=_keep_nans
+                                                )
+            else:
+                ts = super(TimeSerie, self).get_delta(cn, name,
+                                                from_value_date=from_value_date,
+                                                to_value_date=to_value_date,
+                                                delta=delta
+                                                )
         elif serie_type == 'priority':
             ts, _ = self.get_priority(cn, name, revision_date,
+                                            delta=delta,
                                             from_value_date=from_value_date,
                                             to_value_date=to_value_date,
                                             )
         elif serie_type == 'arithmetic':
             ts = self.get_arithmetic(cn, name, revision_date,
+                                            delta=delta,
                                             from_value_date=from_value_date,
                                             to_value_date=to_value_date,
                                             )
@@ -70,6 +79,7 @@ class TimeSerie(BaseTs):
 
     def get_priority(self, cn, alias,
                      revision_date=None,
+                     delta=None,
                      from_value_date=None,
                      to_value_date=None):
 
@@ -81,6 +91,7 @@ class TimeSerie(BaseTs):
             name = row.serie
             prune = row.prune
             ts = self.get(cn, name, revision_date,
+                          delta=delta,
                           from_value_date=from_value_date,
                           to_value_date=to_value_date
                           )
@@ -102,6 +113,7 @@ class TimeSerie(BaseTs):
 
     def get_arithmetic(self, cn, alias,
                         revision_date=None,
+                        delta=None,
                         from_value_date=None,
                         to_value_date=None):
 
@@ -109,6 +121,7 @@ class TimeSerie(BaseTs):
         first_iteration=True
         for row in df.itertuples():
             ts = self.get(cn, row.serie, revision_date,
+                          delta=delta,
                           from_value_date=from_value_date,
                           to_value_date=to_value_date)
             if ts is None:
