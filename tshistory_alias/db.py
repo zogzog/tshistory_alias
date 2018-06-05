@@ -1,15 +1,13 @@
-from sqlalchemy import exists, select, MetaData
+from sqlalchemy import exists, select
 from sqlalchemy.dialects.postgresql import insert
 import pandas as pd
 import numpy as np
-
 
 from tshistory_alias import schema
 from tshistory.schema import tsschema
 
 
 def add_bounds(cn, sn, min=None, max=None):
-
     if min is None and max is None:
         return
     value = {
@@ -27,11 +25,8 @@ def add_bounds(cn, sn, min=None, max=None):
 
 
 def avaibility_alias(cn, alias, warning=False):
-
     original_schema = tsschema('tsh')
     table = original_schema.registry
-
-    action = Exception if not warning else Warning
 
     presence = exists().where(table.c.name == alias)
     msg = None
@@ -56,31 +51,30 @@ def avaibility_alias(cn, alias, warning=False):
             raise Exception(msg)
     return True
 
-def build_priority(cn, alias, list_names,
-                   map_prune=None,
-                   map_coef=None):
 
+def build_priority(cn, alias, names, map_prune=None, map_coef=None):
     avaibility_alias(cn, alias)
+
     table = schema.priority
-    for priority, name in enumerate(list_names):
-        values = {'alias': alias,
-                  'serie': name,
-                  'priority': priority,
-                  }
+    for priority, name in enumerate(names):
+        values = {
+            'alias': alias,
+            'serie': name,
+            'priority': priority
+        }
         if map_prune and name in map_prune:
             values['prune'] = map_prune[name]
         if map_coef and name in map_coef:
             values['coefficient'] = map_coef[name]
-        insert_sql = table.insert(values)
-        cn.execute(insert_sql)
+        cn.execute(table.insert(values))
 
 
 def register_priority(cn, path):
     df = pd.read_csv(path)
-    list_alias = np.unique(df['alias'])
+    aliases = np.unique(df['alias'])
     map_prune = {}
     map_coef = {}
-    for alias in list_alias:
+    for alias in aliases:
         if not avaibility_alias(cn, alias, warning=True):
             continue
         sub_df = df[df['alias'] == alias]
@@ -95,22 +89,25 @@ def register_priority(cn, path):
 
 
 def build_arithmetic(cn, alias, map_coef):
-
     avaibility_alias(cn, alias)
     for sn, coef in map_coef.items():
-        value = {'alias': alias,
-                 'serie': sn,
-                 'coefficient': coef
+        value = {
+            'alias': alias,
+            'serie': sn,
+            'coefficient': coef
         }
-        cn.execute(insert(schema.arithmetic).values(value))
+        cn.execute(schema.arithmetic.insert().values(value))
 
 
 def register_arithmetic(cn, path):
     df = pd.read_csv(path)
-    list_alias = np.unique(df['alias'])
-    for alias in list_alias:
+    aliases = np.unique(df['alias'])
+    for alias in aliases:
         if not avaibility_alias(cn, alias, warning=True):
             continue
         sub_df = df[df['alias'] == alias]
-        map_coef = {row.serie: row.coefficient for row in sub_df.itertuples()}
+        map_coef = {
+            row.serie: row.coefficient
+            for row in sub_df.itertuples()
+        }
         build_arithmetic(cn, alias, map_coef)
