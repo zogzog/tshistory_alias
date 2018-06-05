@@ -6,6 +6,7 @@ from tshistory_alias import schema
 
 
 KIND = {}  # ts name to kind
+BOUNDS = {}
 
 
 class TimeSerie(BaseTs):
@@ -62,11 +63,15 @@ class TimeSerie(BaseTs):
         outliers = schema.outliers
         bounded = exists().where(outliers.c.serie == name)
 
-        mini_maxi = cn.execute(
-            select([outliers.c.min, outliers.c.max]
-        ).where(
-            outliers.c.serie==name)
-        ).fetchone()
+        if name not in BOUNDS:
+            mini_maxi = cn.execute(
+                select([outliers.c.min, outliers.c.max]
+                ).where(
+                    outliers.c.serie==name)
+            ).fetchone()
+            BOUNDS[name] = mini_maxi
+
+        mini_maxi = BOUNDS[name]
 
         if not mini_maxi:
             return ts

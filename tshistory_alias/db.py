@@ -3,15 +3,17 @@ from sqlalchemy.dialects.postgresql import insert
 import pandas as pd
 import numpy as np
 
-from tshistory_alias import schema
+from tshistory_alias import schema, tsio
 from tshistory.schema import tsschema
 
 
-def add_bounds(cn, sn, min=None, max=None):
+def add_bounds(cn, name, min=None, max=None):
     if min is None and max is None:
         return
+
+    tsio.BOUNDS.pop(name, None)
     value = {
-        'serie': sn,
+        'serie': name,
         'min': min,
         'max': max
     }
@@ -21,7 +23,7 @@ def add_bounds(cn, sn, min=None, max=None):
         set_= {'min': min, 'max': max}
     )
     cn.execute(insert_sql)
-    print('insert {} in outliers table'.format(sn))
+    print('insert {} in outliers table'.format(name))
 
 
 def avaibility_alias(cn, alias, warning=False):
