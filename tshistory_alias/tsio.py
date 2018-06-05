@@ -90,9 +90,12 @@ class TimeSerie(BaseTs):
                      from_value_date=None,
                      to_value_date=None):
 
-        df = pd.read_sql("select * from alias.priority as pr "
-                         "where pr.alias = '{}' order by priority desc".format(alias),
-                         cn)
+        df = pd.read_sql(
+            'select * from "{}-alias".priority as prio '
+            'where prio.alias = %(alias)s '
+            'order by priority desc'.format(self.namespace),
+            cn, params={'alias': alias}
+        )
         ts_values = pd.Series()
         ts_origins = pd.Series()
 
@@ -127,7 +130,10 @@ class TimeSerie(BaseTs):
                         delta=None,
                         from_value_date=None,
                         to_value_date=None):
-        df = pd.read_sql("select * from alias.arithmetic where alias = '{}'".format(alias), cn)
+        df = pd.read_sql(
+            'select * from "{}-alias".arithmetic where alias = %(alias)s'.format(self.namespace),
+                         cn, params={'alias': alias}
+        )
         first_iteration = True
         for row in df.itertuples():
             ts = self.get(

@@ -1,19 +1,21 @@
-from sqlalchemy import Table, Column, Integer, String, DateTime, UniqueConstraint, Date, Float, Boolean
-from tshistory.schema import delete_schema, init as tshinit, reset as tshreset
+from sqlalchemy import Table, Column, Integer, String, Float
 from sqlalchemy.schema import CreateSchema
+
+from tshistory.schema import delete_schema
+from tshistory_supervision.schema import init as tshinit, reset as tshreset
 
 outliers = None
 priority = None
 arithmetic = None
 
 
-def define_schema(meta):
+def define_schema(meta, namespace='tsh-alias'):
     _outliers = Table(
         'outliers', meta,
         Column('serie', String, primary_key=True, unique=True),
         Column('min', Float),
         Column('max', Float),
-        schema='alias'
+        schema=namespace
     )
 
     _priority = Table(
@@ -24,7 +26,7 @@ def define_schema(meta):
         Column('priority', Integer, nullable=False),
         Column('coefficient', Float),
         Column('prune', Integer, default=0),
-        schema='alias'
+        schema=namespace
     )
 
     _arithmetic = Table(
@@ -33,7 +35,7 @@ def define_schema(meta):
         Column('alias', String, nullable=False, index=True),
         Column('serie', String, nullable=False, index=True),
         Column('coefficient', Float, default=1),
-        schema='alias'
+        schema=namespace
     )
 
     global outliers, priority, arithmetic
@@ -42,18 +44,15 @@ def define_schema(meta):
     arithmetic = _arithmetic
 
 
-def init(engine, meta):
-    tshinit(engine, meta)
-    tshinit(engine, meta, 'tsh-automatic')
-    tshinit(engine, meta, 'tsh-manual')
-    define_schema(meta)
-    engine.execute(CreateSchema('alias'))
+def init(engine, meta, basens='tsh'):
+    tshinit(engine, meta, basens)
+    ns = '{}-alias'.format(basens)
+    define_schema(meta, ns)
+    engine.execute(CreateSchema(ns))
     for table in (outliers, priority, arithmetic):
         table.create(engine)
 
 
-def reset(engine):
-    tshreset(engine)
-    delete_schema(engine, 'tsh-automatic')
-    delete_schema(engine, 'tsh-manual')
-    engine.execute('drop schema if exists alias cascade')
+def reset(engine, basens='tsh'):
+    tshreset(engine, basens)
+    delete_schema(engine, '{}-alias'.format(basens))
