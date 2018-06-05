@@ -54,22 +54,24 @@ class TimeSerie(BaseTs):
             )
 
         if ts is not None:
-            ts = self.apply_bounds(cn, ts)
+            ts = self.apply_bounds(cn, ts, name)
 
         return ts
 
-    def apply_bounds(self, cn, ts):
-        name = ts.name
+    def apply_bounds(self, cn, ts, name):
         outliers = schema.outliers
         bounded = exists().where(outliers.c.serie == name)
-        if not cn.execute(select([bounded])).scalar():
-            return ts
 
-        mini, maxi = cn.execute(
+        mini_maxi = cn.execute(
             select([outliers.c.min, outliers.c.max]
         ).where(
             outliers.c.serie==name)
         ).fetchone()
+
+        if not mini_maxi:
+            return ts
+
+        mini, maxi = mini_maxi
         if mini:
             ts = ts[ts >= mini]
         if maxi:
