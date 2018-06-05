@@ -5,6 +5,9 @@ from tshistory_supervision.tsio import TimeSerie as BaseTs
 from tshistory_alias import schema
 
 
+KIND = {}  # ts name to kind
+
+
 class TimeSerie(BaseTs):
 
     def insert(self, cn, newts, name, author, **kw):
@@ -141,15 +144,19 @@ class TimeSerie(BaseTs):
         return ts_result
 
     def _typeofserie(self, cn, name):
+        if name in KIND:
+            return KIND[name]
+
         priority = exists().where(schema.priority.c.alias == name)
-        if cn.execute(select([priority])).scalar():
-            return 'priority'
-
         arith = exists().where(schema.arithmetic.c.alias == name)
-        if cn.execute(select([arith])).scalar():
-            return 'arithmetic'
+        if cn.execute(select([priority])).scalar():
+            KIND[name] = 'priority'
+        elif cn.execute(select([arith])).scalar():
+            KIND[name] = 'arithmetic'
+        else:
+            KIND[name] = 'primary'
 
-        return 'primary'
+        return KIND[name]
 
     def _apply_priority(self, ts_result, ts_new, remove, index=None):
         if index is not None:
