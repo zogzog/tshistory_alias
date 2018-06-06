@@ -8,5 +8,5 @@ setup(name='tshistory_alias',
       description='Computed timeseries using real timeseries',
 
       packages=['tshistory_alias'],
-      install_requires=['tshistory'],
+      install_requires=['tshistory_supervision'],
 )
