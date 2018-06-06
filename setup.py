@@ -9,6 +9,10 @@ setup(name='tshistory_alias',
 
       packages=['tshistory_alias'],
       install_requires=['tshistory_supervision'],
+      entry_points={'tshistory.subcommands': [
+          'register-priorities=tshistory_alias.cli:register_priorities',
+          'register-arithmetic=tshistory_alias.cli:register_arithmetic'
+      ]},
       classifiers=[
           'Development Status :: 4 - Beta',
           'Intended Audience :: Developers',
