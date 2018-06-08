@@ -17,6 +17,7 @@ class TimeSerie(BaseTs):
     def __init__(self, namespace='tsh'):
         super().__init__(namespace)
         self.alias_schema = alias_schema(namespace)
+        self.alias_schema.define()
 
     def insert(self, cn, newts, name, author, **kw):
         serie_type = self._typeofserie(cn, name)
