@@ -2,7 +2,7 @@ from sqlalchemy import exists, select
 import pandas as pd
 
 from tshistory_supervision.tsio import TimeSerie as BaseTs
-from tshistory_alias import schema
+from tshistory_alias.schema import alias_schema
 
 
 KIND = {}  # ts name to kind
@@ -10,6 +10,11 @@ BOUNDS = {}
 
 
 class TimeSerie(BaseTs):
+    alias_schema = None
+
+    def __init__(self, namespace='tsh'):
+        super().__init__(namespace)
+        self.alias_schema = alias_schema(namespace)
 
     def insert(self, cn, newts, name, author, **kw):
         serie_type = self._typeofserie(cn, name)
@@ -60,7 +65,7 @@ class TimeSerie(BaseTs):
         return ts
 
     def apply_bounds(self, cn, ts, name):
-        outliers = schema.outliers
+        outliers = self.alias_schema.outliers
         bounded = exists().where(outliers.c.serie == name)
 
         if name not in BOUNDS:
@@ -160,8 +165,8 @@ class TimeSerie(BaseTs):
         if name in KIND:
             return KIND[name]
 
-        priority = exists().where(schema.priority.c.alias == name)
-        arith = exists().where(schema.arithmetic.c.alias == name)
+        priority = exists().where(self.alias_schema.priority.c.alias == name)
+        arith = exists().where(self.alias_schema.arithmetic.c.alias == name)
         if cn.execute(select([priority])).scalar():
             KIND[name] = 'priority'
         elif cn.execute(select([arith])).scalar():

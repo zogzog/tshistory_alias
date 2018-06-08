@@ -3,9 +3,11 @@ from sqlalchemy.dialects.postgresql import insert
 import pandas as pd
 import numpy as np
 
-from tshistory_alias import schema, tsio
 from tshistory.schema import tsschema
+from tshistory_alias import schema, tsio
 
+SCHEMA = schema.alias_schema()
+SCHEMA.define()
 
 def add_bounds(cn, name, min=None, max=None):
     if min is None and max is None:
@@ -17,7 +19,7 @@ def add_bounds(cn, name, min=None, max=None):
         'min': min,
         'max': max
     }
-    insert_sql = insert(schema.outliers).values(value)
+    insert_sql = insert(SCHEMA.outliers).values(value)
     insert_sql = insert_sql.on_conflict_do_update(
         index_elements = ['serie'],
         set_= {'min': min, 'max': max}
@@ -35,12 +37,12 @@ def avaibility_alias(cn, alias, warning=False):
     if cn.execute(select([presence])).scalar():
         msg ='{} already used as a primary name'.format(alias)
 
-    table = schema.priority
+    table = SCHEMA.priority
     presence = exists().where(table.c.alias == alias)
     if cn.execute(select([presence])).scalar():
         msg = '{} already used as a priority alias'.format(alias)
 
-    table = schema.arithmetic
+    table = SCHEMA.arithmetic
     presence = exists().where(table.c.alias == alias)
     if cn.execute(select([presence])).scalar():
         msg = '{} already used as an arithmetic alias'.format(alias)
@@ -57,7 +59,7 @@ def avaibility_alias(cn, alias, warning=False):
 def build_priority(cn, alias, names, map_prune=None, map_coef=None):
     avaibility_alias(cn, alias)
 
-    table = schema.priority
+    table = SCHEMA.priority
     for priority, name in enumerate(names):
         values = {
             'alias': alias,
@@ -98,7 +100,7 @@ def build_arithmetic(cn, alias, map_coef):
             'serie': sn,
             'coefficient': coef
         }
-        cn.execute(schema.arithmetic.insert().values(value))
+        cn.execute(SCHEMA.arithmetic.insert().values(value))
 
 
 def register_arithmetic(cn, path):

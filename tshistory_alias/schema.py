@@ -1,56 +1,80 @@
-from sqlalchemy import Table, Column, Integer, String, Float
+from sqlalchemy import Table, Column, Integer, String, Float, MetaData
 from sqlalchemy.schema import CreateSchema
 
-from tshistory.schema import delete_schema
+from tshistory.schema import tsschema, delete_schema, meta
 from tshistory_supervision.schema import init as tshinit, reset as tshreset
 
-outliers = None
-priority = None
-arithmetic = None
+SCHEMAS = {}
 
+class alias_schema():
+    namespace = 'tsh-alias'
+    meta = None
+    outliers = None
+    priority = None
+    arithmetic = None
 
-def define_schema(meta, namespace='tsh-alias'):
-    _outliers = Table(
-        'outliers', meta,
-        Column('serie', String, primary_key=True, unique=True),
-        Column('min', Float),
-        Column('max', Float),
-        schema=namespace
-    )
+    def __new__(cls, basenamespace='tsh'):
+        ns = '{}-alias'.format(basenamespace)
+        if ns in SCHEMAS:
+            return SCHEMAS[ns]
+        return super().__new__(cls)
 
-    _priority = Table(
-        'priority', meta,
-        Column('id', Integer, primary_key=True),
-        Column('alias', String, nullable=False, index=True),
-        Column('serie', String, nullable=False, index=True),
-        Column('priority', Integer, nullable=False),
-        Column('coefficient', Float),
-        Column('prune', Integer, default=0),
-        schema=namespace
-    )
+    def __init__(self, basenamespace='tsh'):
+        self.namespace = '{}-alias'.format(basenamespace)
 
-    _arithmetic = Table(
-        'arithmetic', meta,
-        Column('id', Integer, primary_key=True),
-        Column('alias', String, nullable=False, index=True),
-        Column('serie', String, nullable=False, index=True),
-        Column('coefficient', Float, default=1),
-        schema=namespace
-    )
+    def define(self, meta=MetaData()):
+        if self.namespace in SCHEMAS:
+            return
+        self.outliers = Table(
+            'outliers', meta,
+            Column('serie', String, primary_key=True, unique=True),
+            Column('min', Float),
+            Column('max', Float),
+            schema=self.namespace
+        )
 
-    global outliers, priority, arithmetic
-    outliers = _outliers
-    priority = _priority
-    arithmetic = _arithmetic
+        self.priority = Table(
+            'priority', meta,
+            Column('id', Integer, primary_key=True),
+            Column('alias', String, nullable=False, index=True),
+            Column('serie', String, nullable=False, index=True),
+            Column('priority', Integer, nullable=False),
+            Column('coefficient', Float),
+            Column('prune', Integer, default=0),
+            schema=self.namespace
+        )
+
+        self.arithmetic = Table(
+            'arithmetic', meta,
+            Column('id', Integer, primary_key=True),
+            Column('alias', String, nullable=False, index=True),
+            Column('serie', String, nullable=False, index=True),
+            Column('coefficient', Float, default=1),
+            schema=self.namespace
+        )
+        SCHEMAS[self.namespace] = self
+
+    def exists(self, engine):
+        return engine.execute('select exists(select schema_name '
+                              'from information_schema.schemata '
+                              'where schema_name = %(name)s)',
+                              name=self.namespace
+                              ).scalar()
+
+    def create(self, engine):
+        if self.exists(engine):
+            return
+        engine.execute(CreateSchema(self.namespace))
+        self.outliers.create(engine)
+        self.priority.create(engine)
+        self.arithmetic.create(engine)
 
 
 def init(engine, meta, basens='tsh'):
     tshinit(engine, meta, basens)
-    ns = '{}-alias'.format(basens)
-    define_schema(meta, ns)
-    engine.execute(CreateSchema(ns))
-    for table in (outliers, priority, arithmetic):
-        table.create(engine)
+    aliasschema = alias_schema(basens)
+    aliasschema.define(meta)
+    aliasschema.create(engine)
 
 
 def reset(engine, basens='tsh'):
