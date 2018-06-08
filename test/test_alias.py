@@ -3,8 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 import pandas as pd
 
-from tshistory.testutil import genserie
-from tshistory_alias.db import add_bounds, build_priority, build_arithmetic
+from tshistory.testutil import genserie, utcdt
 
 
 def assert_df(expected, df):
@@ -12,10 +11,10 @@ def assert_df(expected, df):
 
 
 def test_outliers(engine, tsh):
-    add_bounds(engine, 'serie1', min=5, max=10)
-    add_bounds(engine, 'serie2', max=10)
-    add_bounds(engine, 'serie3', min=5)
-    add_bounds(engine, 'serie4', min=50)
+    tsh.add_bounds(engine, 'serie1', min=5, max=10)
+    tsh.add_bounds(engine, 'serie2', max=10)
+    tsh.add_bounds(engine, 'serie3', min=5)
+    tsh.add_bounds(engine, 'serie4', min=50)
 
     ts = genserie(datetime(2015,1,1), 'D', 15)
     tsh.insert(engine, ts, 'serie1', 'test')
@@ -48,7 +47,7 @@ def test_outliers(engine, tsh):
     assert 0 == len(ts4)
 
     # upsert:
-    add_bounds(engine, 'serie4', min=-50)
+    tsh.add_bounds(engine, 'serie4', min=-50)
     ts4 = tsh.get(engine, 'serie4')
 
     assert 15 == len(ts4)
@@ -63,8 +62,8 @@ def test_combine(engine, tsh):
     tsh.insert(engine, ts_nomination, 'nominated', 'test')
     tsh.insert(engine, ts_forecast, 'forecasted', 'test')
 
-    build_priority(engine, 'serie5',
-                   ['realised', 'nominated', 'forecasted'])
+    tsh.build_priority(engine, 'serie5',
+                       ['realised', 'nominated', 'forecasted'])
 
     values, origin = tsh.get_priority(engine,'serie5')
 
@@ -88,7 +87,8 @@ def test_combine(engine, tsh):
 2010-01-17    3.0
 2010-01-18    3.0
 2010-01-19    3.0
-2010-01-20    3.0""", values)
+2010-01-20    3.0
+""", values)
 
     assert_df("""
 2010-01-01      realised
@@ -111,13 +111,13 @@ def test_combine(engine, tsh):
 2010-01-18    forecasted
 2010-01-19    forecasted
 2010-01-20    forecasted
-    """, origin)
+""", origin)
 
     # we remove the last value of the 2 first series which are considered as bogus
 
-    build_priority(engine, 'serie6',
-                   ['realised', 'nominated', 'forecasted'],
-                   map_prune={'realised': 1, 'nominated': 1, 'forecasted': 0})
+    tsh.build_priority(engine, 'serie6',
+                       ['realised', 'nominated', 'forecasted'],
+                       map_prune={'realised': 1, 'nominated': 1, 'forecasted': 0})
 
     values, origin = tsh.get_priority(engine,'serie6')
 
@@ -142,7 +142,7 @@ def test_combine(engine, tsh):
 2010-01-18    3.0
 2010-01-19    3.0
 2010-01-20    3.0
-    """, values)
+""", values)
 
     assert_df("""
 2010-01-01      realised
@@ -165,14 +165,13 @@ def test_combine(engine, tsh):
 2010-01-18    forecasted
 2010-01-19    forecasted
 2010-01-20    forecasted
-    """, origin)
+""", origin)
 
-    build_priority(engine, 'serie7',
-                   ['realised', 'nominated', 'forecasted'],
-                   map_prune={'realised': 1, 'nominated': 3, 'forecasted': 0})
+    tsh.build_priority(engine, 'serie7',
+                       ['realised', 'nominated', 'forecasted'],
+                       map_prune={'realised': 1, 'nominated': 3, 'forecasted': 0})
 
     values, origin = tsh.get_priority(engine,'serie7')
-
 
     assert_df("""
 2010-01-01      realised
@@ -195,29 +194,27 @@ def test_combine(engine, tsh):
 2010-01-18    forecasted
 2010-01-19    forecasted
 2010-01-20    forecasted
-    """, origin)
-    # nice
+""", origin)
 
 
 def test_arithmetic(engine, tsh):
-
     ts_toto = genserie(datetime(2010, 1, 1), 'D', 7, [1])
     ts_tata = genserie(datetime(2010, 1, 3), 'D', 7, [2])
 
     tsh.insert(engine, ts_toto, 'toto', 'test')
     tsh.insert(engine, ts_tata, 'tata', 'test')
 
-    build_arithmetic(engine, 'sum', {'toto': 1,
-                                     'tata': 1})
+    tsh.build_arithmetic(engine, 'sum', {'toto': 1,
+                                         'tata': 1})
 
-    build_arithmetic(engine, 'difference', {'toto': 1,
-                                            'tata': -1})
+    tsh.build_arithmetic(engine, 'difference', {'toto': 1,
+                                                'tata': -1})
 
-    build_arithmetic(engine, 'mean', {'toto': 0.5,
-                                      'tata': 0.5})
+    tsh.build_arithmetic(engine, 'mean', {'toto': 0.5,
+                                          'tata': 0.5})
 
-    build_arithmetic(engine, 'bogus', {'toto': 0.5,
-                                       'unknown': 0.5})
+    tsh.build_arithmetic(engine, 'bogus', {'toto': 0.5,
+                                           'unknown': 0.5})
 
     values = tsh.get_arithmetic(engine, 'sum')
 
@@ -266,11 +263,11 @@ def test_dispatch_get(engine, tsh):
     tsh.insert(engine, ts_nomination, 'nominated0', 'test')
     tsh.insert(engine, ts_forecast, 'forecasted0', 'test')
 
-    build_priority(engine, 'composite_serie',
-                   ['realised0', 'nominated0', 'forecasted0'])
+    tsh.build_priority(engine, 'composite_serie',
+                       ['realised0', 'nominated0', 'forecasted0'])
 
-    build_arithmetic(engine, 'sum_serie', {'realised0':1,
-                                           'forecasted0':1})
+    tsh.build_arithmetic(engine, 'sum_serie', {'realised0':1,
+                                               'forecasted0':1})
 
     assert 'primary' == tsh._typeofserie(engine, 'realised0')
     assert 'priority' == tsh._typeofserie(engine, 'composite_serie')
@@ -284,7 +281,7 @@ def test_dispatch_get(engine, tsh):
 2010-01-04    2.0
 2010-01-05    2.0
 2010-01-06    2.0
-    """, tsh.get(engine, 'nominated0'))
+""", tsh.get(engine, 'nominated0'))
 
     assert_df("""
 2010-01-01    1.0
@@ -293,14 +290,16 @@ def test_dispatch_get(engine, tsh):
 2010-01-04    1.0
 2010-01-05    1.0
 2010-01-06    2.0
-2010-01-07    3.0""",  tsh.get(engine, 'composite_serie'))
+2010-01-07    3.0
+""",  tsh.get(engine, 'composite_serie'))
 
     assert_df("""
 2010-01-01    4.0
 2010-01-02    4.0
 2010-01-03    4.0
 2010-01-04    4.0
-2010-01-05    4.0""", tsh.get(engine,'sum_serie'))
+2010-01-05    4.0
+""", tsh.get(engine,'sum_serie'))
 
 
 def test_micmac(engine, tsh):
@@ -310,19 +309,19 @@ def test_micmac(engine, tsh):
     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 6, [3]), 'micmac3', 'test')
     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 7, [15]), 'micmac4', 'test')
 
-    build_priority(engine, 'prio1',
-                   ['micmac1', 'micmac2'],
-                   map_prune={'micmac1': 2, 'micmac2': 1})
+    tsh.build_priority(engine, 'prio1',
+                       ['micmac1', 'micmac2'],
+                       map_prune={'micmac1': 2, 'micmac2': 1})
 
-    build_arithmetic(engine, 'arithmetic1',
-                     {'prio1':1,
-                      'micmac3':1})
+    tsh.build_arithmetic(engine, 'arithmetic1',
+                         {'prio1':1,
+                          'micmac3':1})
 
-    build_priority(engine, 'final',
-                   ['arithmetic1', 'micmac4'],
-                   map_prune={'arithmetic1': 1, 'micmac4': 0})
+    tsh.build_priority(engine, 'final',
+                       ['arithmetic1', 'micmac4'],
+                       map_prune={'arithmetic1': 1, 'micmac4': 0})
 
-    add_bounds(engine, 'micmac1', min=0, max=100)
+    tsh.add_bounds(engine, 'micmac1', min=0, max=100)
 
     tsh.get(engine, 'micmac1')
     tsh.get(engine, 'micmac2')
@@ -345,24 +344,23 @@ def test_micmac(engine, tsh):
 def test_errors(engine, tsh):
     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 5, [1]), 'primary_series', 'test')
 
-    build_arithmetic(engine, 'arithmetic2', {'toto': 1, 'tata': 1})
-
-    build_priority(engine, 'priority2', ['toto', 'tata'])
+    tsh.build_arithmetic(engine, 'arithmetic2', {'toto': 1, 'tata': 1})
+    tsh.build_priority(engine, 'priority2', ['toto', 'tata'])
 
     with pytest.raises(Exception) as err:
-        build_priority(engine, 'arithmetic2', ['toto', 'tata'])
+        tsh.build_priority(engine, 'arithmetic2', ['toto', 'tata'])
     assert 'arithmetic2 already used as an arithmetic alias' ==  str(err.value)
 
     with pytest.raises(Exception) as err:
-        build_arithmetic(engine, 'priority2', {'toto': 1, 'tata': 1})
+        tsh.build_arithmetic(engine, 'priority2', {'toto': 1, 'tata': 1})
     assert 'priority2 already used as a priority alias' ==  str(err.value)
 
     with pytest.raises(Exception) as err:
-        build_priority(engine, 'primary_series', ['toto', 'tata'])
+        tsh.build_priority(engine, 'primary_series', ['toto', 'tata'])
     assert 'primary_series already used as a primary name' == str(err.value)
 
     with pytest.raises(Exception) as err:
-        build_arithmetic(engine, 'primary_series', {'toto': 1, 'tata': 1})
+        tsh.build_arithmetic(engine, 'primary_series', {'toto': 1, 'tata': 1})
     assert 'primary_series already used as a primary name' == str(err.value)
 
     with pytest.raises(Exception) as err:
@@ -387,12 +385,12 @@ def test_historical(engine, tsh):
 
     tsh.get(engine, 'republication')
 
-    build_arithmetic(engine, 'operation_past',
-                     {'republication': 1,
-                      'stable': 1}
+    tsh.build_arithmetic(engine, 'operation_past',
+                         {'republication': 1,
+                          'stable': 1}
     )
 
-    build_priority(engine, 'compo_past', ['republication', 'stable'])
+    tsh.build_priority(engine, 'compo_past', ['republication', 'stable'])
 
     tsh.get(engine, 'operation_past')
     tsh.get(engine, 'compo_past')
@@ -462,5 +460,3 @@ def test_historical(engine, tsh):
 """, tsh.get(engine, 'compo_past',
              delta=timedelta(hours=2.5))
     )
-
-

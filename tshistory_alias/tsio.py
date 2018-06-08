@@ -1,4 +1,6 @@
 from sqlalchemy import exists, select
+from sqlalchemy.dialects.postgresql import insert
+
 import pandas as pd
 
 from tshistory_supervision.tsio import TimeSerie as BaseTs
@@ -179,3 +181,75 @@ class TimeSerie(BaseTs):
             ts_new = ts_new[:-remove]
         combine = self.patch(ts_result, ts_new)
         return combine
+
+    # alias definition/construction
+
+    def canuse_alias(self, cn, alias, warning=False):
+        msg = None
+        if self._get_ts_table(cn, alias) is not None:
+            msg ='{} already used as a primary name'.format(alias)
+
+        table = self.alias_schema.priority
+        presence = exists().where(table.c.alias == alias)
+        if cn.execute(select([presence])).scalar():
+            msg = '{} already used as a priority alias'.format(alias)
+
+        table = self.alias_schema.arithmetic
+        presence = exists().where(table.c.alias == alias)
+        if cn.execute(select([presence])).scalar():
+            msg = '{} already used as an arithmetic alias'.format(alias)
+
+        if msg:
+            if warning:
+                Warning(msg)
+                return False
+            else:
+                raise Exception(msg)
+        return True
+
+    def add_bounds(self, cn, name, min=None, max=None):
+        if min is None and max is None:
+            return
+
+        BOUNDS.pop(name, None)
+        value = {
+            'serie': name,
+            'min': min,
+            'max': max
+        }
+        insert_sql = insert(self.alias_schema.outliers).values(value)
+        insert_sql = insert_sql.on_conflict_do_update(
+            index_elements = ['serie'],
+            set_= {'min': min, 'max': max}
+        )
+        cn.execute(insert_sql)
+        print('insert {} in outliers table'.format(name))
+
+    def build_priority(self, cn, alias, names, map_prune=None, map_coef=None):
+        if not self.canuse_alias(cn, alias):
+            return
+
+        table = self.alias_schema.priority
+        for priority, name in enumerate(names):
+            values = {
+                'alias': alias,
+                'serie': name,
+                'priority': priority
+            }
+            if map_prune and name in map_prune:
+                values['prune'] = map_prune[name]
+            if map_coef and name in map_coef:
+                values['coefficient'] = map_coef[name]
+            cn.execute(table.insert(values))
+
+    def build_arithmetic(self, cn, alias, map_coef):
+        if not self.canuse_alias(cn, alias):
+            return
+
+        for sn, coef in map_coef.items():
+            value = {
+                'alias': alias,
+                'serie': sn,
+                'coefficient': coef
+            }
+            cn.execute(self.alias_schema.arithmetic.insert().values(value))
