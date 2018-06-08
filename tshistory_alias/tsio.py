@@ -39,11 +39,7 @@ class TimeSerie(BaseTs):
                     _keep_nans=_keep_nans
                 )
             else:
-                ts = self.get_delta(cn, name,
-                                    from_value_date=from_value_date,
-                                    to_value_date=to_value_date,
-                                    delta=delta
-                )
+                ts = self.get_delta(cn, name, delta=delta)
         elif serie_type == 'priority':
             ts, _ = self.get_priority(
                 cn, name, revision_date,
