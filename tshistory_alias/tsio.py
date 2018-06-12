@@ -201,11 +201,10 @@ class TimeSerie(BaseTs):
             msg = '{} already used as an arithmetic alias'.format(alias)
 
         if msg:
-            if warning:
-                Warning(msg)
-                return False
-            else:
+            if not warning:
                 raise Exception(msg)
+            print(msg)
+            return False
         return True
 
     def add_bounds(self, cn, name, min=None, max=None):
