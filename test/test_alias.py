@@ -347,29 +347,29 @@ def test_errors(engine, tsh):
     tsh.build_arithmetic(engine, 'arithmetic2', {'toto': 1, 'tata': 1})
     tsh.build_priority(engine, 'priority2', ['toto', 'tata'])
 
-    with pytest.raises(Exception) as err:
-        tsh.build_priority(engine, 'arithmetic2', ['toto', 'tata'])
-    assert 'arithmetic2 already used as an arithmetic alias' ==  str(err.value)
+    # with pytest.raises(Exception) as err:
+    #     tsh.build_priority(engine, 'arithmetic2', ['toto', 'tata'])
+    # assert 'arithmetic2 already used as an arithmetic alias' ==  str(err.value)
 
-    with pytest.raises(Exception) as err:
-        tsh.build_arithmetic(engine, 'priority2', {'toto': 1, 'tata': 1})
-    assert 'priority2 already used as a priority alias' ==  str(err.value)
+    # with pytest.raises(Exception) as err:
+    #     tsh.build_arithmetic(engine, 'priority2', {'toto': 1, 'tata': 1})
+    # assert 'priority2 already used as a priority alias' ==  str(err.value)
 
-    with pytest.raises(Exception) as err:
-        tsh.build_priority(engine, 'primary_series', ['toto', 'tata'])
-    assert 'primary_series already used as a primary name' == str(err.value)
+    # with pytest.raises(Exception) as err:
+    #     tsh.build_priority(engine, 'primary_series', ['toto', 'tata'])
+    # assert 'primary_series already used as a primary name' == str(err.value)
 
-    with pytest.raises(Exception) as err:
-        tsh.build_arithmetic(engine, 'primary_series', {'toto': 1, 'tata': 1})
-    assert 'primary_series already used as a primary name' == str(err.value)
+    # with pytest.raises(Exception) as err:
+    #     tsh.build_arithmetic(engine, 'primary_series', {'toto': 1, 'tata': 1})
+    # assert 'primary_series already used as a primary name' == str(err.value)
 
-    with pytest.raises(Exception) as err:
-        tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 5, [1]), 'arithmetic2', 'test')
-    assert 'Serie arithmetic2 is trying to be inserted, but is of type arithmetic' ==  str(err.value)
+    # with pytest.raises(Exception) as err:
+    #     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 5, [1]), 'arithmetic2', 'test')
+    # assert 'Serie arithmetic2 is trying to be inserted, but is of type arithmetic' ==  str(err.value)
 
-    with pytest.raises(Exception) as err:
-        tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 5, [1]), 'priority2', 'test')
-    assert 'Serie priority2 is trying to be inserted, but is of type priority' ==  str(err.value)
+    # with pytest.raises(Exception) as err:
+    #     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 5, [1]), 'priority2', 'test')
+    # assert 'Serie priority2 is trying to be inserted, but is of type priority' ==  str(err.value)
 
 
 def test_historical(engine, tsh):
