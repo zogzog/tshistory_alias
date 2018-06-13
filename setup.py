@@ -11,7 +11,8 @@ setup(name='tshistory_alias',
       install_requires=['tshistory_supervision'],
       entry_points={'tshistory.subcommands': [
           'register-priorities=tshistory_alias.cli:register_priorities',
-          'register-arithmetic=tshistory_alias.cli:register_arithmetic'
+          'register-arithmetic=tshistory_alias.cli:register_arithmetic',
+          'register-outliers=tshistory_alias.cli:register_outliers'
       ]},
       classifiers=[
           'Development Status :: 4 - Beta',

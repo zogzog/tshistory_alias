@@ -33,3 +33,11 @@ def register_arithmetic(cn, path, override=False):
             for row in sub_df.itertuples()
         }
         tsh.build_arithmetic(cn, alias, map_coef, override)
+
+
+def register_outliers(cn, path, override=False):
+    df = pd.read_csv(path)
+    tsh = tsio.TimeSerie()
+    for row in df.itertuples():
+        tsh.add_bounds(cn, row.serie, row.min, row.max)
+

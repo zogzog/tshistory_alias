@@ -66,7 +66,6 @@ class TimeSerie(BaseTs):
     def apply_bounds(self, cn, ts, name):
         outliers = self.alias_schema.outliers
         bounded = exists().where(outliers.c.serie == name)
-
         if name not in BOUNDS:
             mini_maxi = cn.execute(
                 select([outliers.c.min, outliers.c.max]
@@ -76,14 +75,13 @@ class TimeSerie(BaseTs):
             BOUNDS[name] = mini_maxi
 
         mini_maxi = BOUNDS[name]
-
         if not mini_maxi:
             return ts
 
         mini, maxi = mini_maxi
-        if mini:
+        if mini and not pd.isnull(mini):
             ts = ts[ts >= mini]
-        if maxi:
+        if maxi and not pd.isnull(maxi):
             ts = ts[ts <= maxi]
 
         return ts

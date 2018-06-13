@@ -25,3 +25,14 @@ def register_arithmetic(dburi, arithmetic_file, override):
     engine = create_engine(dburi)
     with engine.connect() as cn:
         db.register_arithmetic(cn, arithmetic_file, override)
+
+
+@click.command(name='register-outliers')
+@click.argument('dburi')
+@click.argument('outliers-file')
+@click.option('--override', is_flag=True, default=False)
+def register_outliers(dburi, outliers_file, override):
+    " register outlier definitions "
+    engine = create_engine(dburi)
+    with engine.connect() as cn:
+        db.register_outliers(cn, outliers_file, override)
