@@ -26,13 +26,17 @@ def register_arithmetic(cn, path, override=False):
     df = pd.read_csv(path)
     aliases = np.unique(df['alias'])
     tsh = tsio.TimeSerie()
+    map_fillopt = {}
     for alias in aliases:
         sub_df = df[df['alias'] == alias]
         map_coef = {
             row.serie: row.coefficient
             for row in sub_df.itertuples()
         }
-        tsh.build_arithmetic(cn, alias, map_coef, override)
+        for row in sub_df.itertuples():
+            if not pd.isnull(row.fillopt):
+                map_fillopt[row.serie] = row.fillopt
+        tsh.build_arithmetic(cn, alias, map_coef, map_fillopt, override)
 
 
 def register_outliers(cn, path, override=False):

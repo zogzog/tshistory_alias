@@ -136,6 +136,7 @@ class TimeSerie(BaseTs):
                          cn, params={'alias': alias}
         )
         first_iteration = True
+        ts_with_fillopt = {}
         for row in df.itertuples():
             ts = self.get(
                 cn, row.serie, revision_date,
@@ -147,11 +148,21 @@ class TimeSerie(BaseTs):
                 raise Exception('{} is needed to calculate {} and does not exist'.format(
                     row.serie, alias)
                 )
+
+            if row.fillopt:
+                ts_with_fillopt[ts.name] = row.fillopt
+
             if first_iteration:
                 df_result = ts.to_frame() * row.coefficient
                 first_iteration=False
                 continue
-            df_result = df_result.join(ts * row.coefficient, how='inner')
+            df_result = df_result.join(ts * row.coefficient, how='outer')
+
+        for ts, fillopt in ts_with_fillopt.items():
+            df_result[ts] = df_result[ts].fillna(method=fillopt)
+
+        df_result = df_result.dropna()
+
         ts_result = df_result.sum(axis=1)
         ts_result.name = alias
 
@@ -236,7 +247,7 @@ class TimeSerie(BaseTs):
                 values['coefficient'] = map_coef[name]
             cn.execute(table.insert(values))
 
-    def build_arithmetic(self, cn, alias, map_coef, override=False):
+    def build_arithmetic(self, cn, alias, map_coef, map_fillopt=None, override=False):
         if self.exists(cn, alias):
             print('primary serie {} already exists'.format(alias))
             return
@@ -250,4 +261,7 @@ class TimeSerie(BaseTs):
                 'serie': sn,
                 'coefficient': coef
             }
+            if map_fillopt and sn in map_fillopt:
+                value['fillopt'] = map_fillopt[sn]
+
             cn.execute(self.alias_schema.arithmetic.insert().values(value))

@@ -1,10 +1,11 @@
-from sqlalchemy import Table, Column, Integer, String, Float, MetaData
+from sqlalchemy import Table, Column, Integer, String, Float, Boolean, MetaData
 from sqlalchemy.schema import CreateSchema
 
 from tshistory.schema import tsschema, delete_schema, meta
 from tshistory_supervision.schema import init as tshinit, reset as tshreset
 
 SCHEMAS = {}
+
 
 class alias_schema():
     namespace = 'tsh-alias'
@@ -50,6 +51,7 @@ class alias_schema():
             Column('alias', String, nullable=False, index=True),
             Column('serie', String, nullable=False, index=True),
             Column('coefficient', Float, default=1),
+            Column('fillopt', String),
             schema=self.namespace
         )
         SCHEMAS[self.namespace] = self

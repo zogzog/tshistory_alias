@@ -216,6 +216,12 @@ def test_arithmetic(engine, tsh):
     tsh.build_arithmetic(engine, 'bogus', {'toto': 0.5,
                                            'unknown': 0.5})
 
+    tsh.build_arithmetic(engine, 'forwardfill', {'toto': 1,
+                                                 'tata': 1}, {'toto': 'ffill'})
+
+    tsh.build_arithmetic(engine, 'backwardfill', {'toto': 1,
+                                                  'tata': 1}, {'tata': 'bfill'})
+
     values = tsh.get_arithmetic(engine, 'sum')
 
     assert_df("""
@@ -245,6 +251,30 @@ def test_arithmetic(engine, tsh):
 2010-01-05   -1.0
 2010-01-06   -1.0
 2010-01-07   -1.0
+""", values)
+
+    values = tsh.get_arithmetic(engine, 'forwardfill')
+
+    assert_df("""
+2010-01-03    3.0
+2010-01-04    3.0
+2010-01-05    3.0
+2010-01-06    3.0
+2010-01-07    3.0
+2010-01-08    3.0
+2010-01-09    3.0
+""", values)
+
+    values = tsh.get_arithmetic(engine, 'backwardfill')
+
+    assert_df("""
+2010-01-01    3.0
+2010-01-02    3.0
+2010-01-03    3.0
+2010-01-04    3.0
+2010-01-05    3.0
+2010-01-06    3.0
+2010-01-07    3.0
 """, values)
 
     with pytest.raises(Exception) as err:
