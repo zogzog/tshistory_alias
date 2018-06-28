@@ -490,3 +490,16 @@ def test_historical(engine, tsh):
 """, tsh.get(engine, 'compo_past',
              delta=timedelta(hours=2.5))
     )
+
+    assert_df("""
+2015-01-01 06:00:00    3.0
+2015-01-01 07:00:00    3.0
+2015-01-01 08:00:00    3.0
+2015-01-01 09:00:00    3.0
+2015-01-01 10:00:00    4.0
+2015-01-01 11:00:00    5.0
+""", tsh.get(engine, 'compo_past',
+            delta=timedelta(hours=2.5),
+            from_value_date=datetime(2015, 1, 1, 6),
+            to_value_date=datetime(2015, 1, 1, 11))
+    )
