@@ -6,7 +6,7 @@ from tshistory_alias import tsio
 
 def register_priority(cn, path, override=False):
     df = pd.read_csv(path)
-    aliases = np.unique(df['alias'])
+    aliases = np.unique(df['alias'].dropna())
     map_prune = {}
     map_coef = {}
     tsh = tsio.TimeSerie()
@@ -24,7 +24,7 @@ def register_priority(cn, path, override=False):
 
 def register_arithmetic(cn, path, override=False):
     df = pd.read_csv(path)
-    aliases = np.unique(df['alias'])
+    aliases = np.unique(df['alias'].dropna())
     tsh = tsio.TimeSerie()
     map_fillopt = {}
     for alias in aliases:
