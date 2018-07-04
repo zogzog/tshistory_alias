@@ -163,7 +163,8 @@ class TimeSerie(BaseTs):
             df_result = df_result.join(ts * row.coefficient, how='outer')
 
         for ts, fillopt in ts_with_fillopt.items():
-            df_result[ts] = df_result[ts].fillna(method=fillopt)
+            for method in fillopt.split(','):
+                df_result[ts] = df_result[ts].fillna(method=method.strip())
 
         df_result = df_result.dropna()
 
