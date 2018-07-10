@@ -36,3 +36,17 @@ def register_outliers(dburi, outliers_file, override):
     engine = create_engine(dburi)
     with engine.connect() as cn:
         db.register_outliers(cn, outliers_file, override)
+
+
+@click.command(name='remove-alias')
+@click.argument('dburi')
+@click.argument('alias_type')
+@click.argument('alias')
+@click.option('--namespace', default='tsh')
+def remove_alias(dburi, alias_type, alias, namespace='tsh'):
+    "remove singe alias"
+    engine = create_engine(dburi)
+    table = '"{}-alias".{}'.format(namespace, alias_type)
+    sql = "delete from {} where alias = %(alias)s".format(table)
+    with engine.connect() as cn:
+        cn.execute(sql, alias=alias)

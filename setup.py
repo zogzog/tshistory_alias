@@ -12,7 +12,8 @@ setup(name='tshistory_alias',
       entry_points={'tshistory.subcommands': [
           'register-priorities=tshistory_alias.cli:register_priorities',
           'register-arithmetic=tshistory_alias.cli:register_arithmetic',
-          'register-outliers=tshistory_alias.cli:register_outliers'
+          'register-outliers=tshistory_alias.cli:register_outliers',
+          'remove-alias=tshistory_alias.cli:remove_alias',
       ]},
       classifiers=[
           'Development Status :: 4 - Beta',
