@@ -50,3 +50,23 @@ def remove_alias(dburi, alias_type, alias, namespace='tsh'):
     sql = "delete from {} where alias = %(alias)s".format(table)
     with engine.begin() as cn:
         cn.execute(sql, alias=alias)
+
+
+TABLES = ('outliers', 'priority', 'arithmetic')
+@click.command(name='reset-aliases')
+@click.argument('dburi')
+@click.option('--only', type=click.Choice(TABLES))
+@click.option('--namespace', default='tsh')
+def reset_aliases(dburi, only=None, namespace='tsh'):
+    " remove aliases wholesale (all or per type using --only) "
+    if only is None:
+        tables = TABLES
+    else:
+        assert only in TABLES
+        tables = [only]
+
+    engine = create_engine(dburi)
+    for table in tables:
+        with engine.begin() as cn:
+            cn.execute('delete from "{}-alias"."{}"'.format(namespace, table))
+
