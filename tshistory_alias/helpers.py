@@ -1,7 +1,7 @@
 import pandas as pd
 
 def alias_table(engine, tsh, id_serie, fromdate=None, todate=None,
-                author=None, additionnal_info=None, url_base_pathname=None):
+                author=None, additionnal_info=None, url_base_pathname=''):
     '''
     function used as callback for tseditor to handle aliases
     '''
@@ -77,18 +77,40 @@ def alias_table(engine, tsh, id_serie, fromdate=None, todate=None,
         else:
             df_round[col] = df[col].round(max(2, int(-log10(abs(avg)))))
 
-    col_width_css = {'max-width': '%sex'%(MAX_LENGTH+3), 'min-width': '%sex'%(MAX_LENGTH+3), 'width': '%sex'%(MAX_LENGTH+3)}
-    col_width_css.update({'position': 'sticky', 'top': '0', 'background-color': 'white'})
-    return html.Table(
-        [html.Tr([html.Th('', style = {'zIndex': '9999', 'position': 'sticky', 'left': '0', 'top':'0', 'background-color': 'white' })]
-                 + [html.Th(build_div_header(col),  style=col_width_css) for col in df.columns])] +
+    header_css = {'max-width': '%sex'%(MAX_LENGTH+3),
+                  'min-width': '%sex'%(MAX_LENGTH+3),
+                  'width': '%sex'%(MAX_LENGTH+3),
+                  'position': 'sticky',
+                  'top': '0',
+                  'background-color': 'white'
+                  }
+    corner_css = {'zIndex': '9999',
+                  'position': 'sticky',
+                  'left': '0',
+                  'top':'0',
+                  'background-color':'white'
+                  }
+    dates_css = {'position': 'sticky',
+                 'left': '0',
+                 'background-color': 'white'
+                 }
 
-        [html.Tr([html.Th(df.index[i],  style = {'position': 'sticky', 'left': '0', 'background-color': 'white'})] +
-                 [
-                     html.Td(df_round.iloc[i][col], title=build_str_formula(col, df.iloc[i][col],
-                                                                            df_mulitplied.iloc[i][col]))
-                     for col in df.columns
-                 ])
-         for i in range(len(df))
-         ]
-    )
+    corner = html.Th('', style = corner_css)
+    header = html.Tr([corner] + [html.Th(build_div_header(col), style=header_css) for col in df.columns])
+
+    list_for_table = []
+    for i in range(len(df)):
+        new_line = [html.Th(df.index[i], style=dates_css)]
+        for col in df.columns:
+            new_line.append(html.Td(df_round.iloc[i][col],
+                                    title=build_str_formula(col,
+                                                            df.iloc[i][col],
+                                                            df_mulitplied.iloc[i][col])))
+        list_for_table.append(html.Tr(new_line))
+
+    list_for_table = [header] + list_for_table
+
+    return html.Table(list_for_table)
+
+
+

@@ -4,6 +4,8 @@ import pytest
 import pandas as pd
 
 from tshistory.testutil import genserie, utcdt
+from tshistory_alias.helpers import alias_table
+
 
 
 def assert_df(expected, df):
@@ -369,6 +371,11 @@ def test_micmac(engine, tsh):
 2010-01-06    15.0
 2010-01-07    15.0
 """, tsh.get(engine, 'final'))
+
+    dash_html_table = alias_table(engine, tsh, 'final')
+    inside = dash_html_table.children
+    assert 8 == len(inside)
+    assert 4 == len(inside[0].children)
 
 
 def test_errors(engine, tsh):
