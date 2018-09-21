@@ -10,6 +10,9 @@ from tshistory_alias.schema import alias_schema
 KIND = {}  # ts name to kind
 BOUNDS = {}
 
+class AliasError(Exception):
+    pass
+
 
 class TimeSerie(BaseTs):
     alias_schema = None
@@ -22,7 +25,7 @@ class TimeSerie(BaseTs):
     def insert(self, cn, newts, name, author, **kw):
         serie_type = self._typeofserie(cn, name)
         if serie_type != 'primary':
-            raise Exception('Serie {} is trying to be inserted, but is of type {}'.format(
+            raise AliasError('Serie {} is trying to be inserted, but is of type {}'.format(
                 name, serie_type)
             )
 
@@ -149,7 +152,7 @@ class TimeSerie(BaseTs):
                 to_value_date=to_value_date
             )
             if ts is None:
-                raise Exception('{} is needed to calculate {} and does not exist'.format(
+                raise AliasError('{} is needed to calculate {} and does not exist'.format(
                     row.serie, alias)
                 )
 

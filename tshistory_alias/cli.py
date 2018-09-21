@@ -2,7 +2,7 @@ import click
 
 from sqlalchemy import create_engine
 
-from tshistory_alias import db
+from tshistory_alias import db, tsio
 
 
 @click.command(name='register-priorities')
@@ -68,5 +68,31 @@ def reset_aliases(dburi, only=None, namespace='tsh'):
     engine = create_engine(dburi)
     for table in tables:
         with engine.begin() as cn:
-            cn.execute('delete from "{}-alias"."{}"'.format(namespace, table))
+            cn.execute(f'delete from "{namespace}-alias"."{table}"')
 
+
+@click.command(name='verify-aliases')
+@click.argument('dburi')
+@click.option('--only', type=click.Choice(TABLES))
+@click.option('--namespace', default='tsh')
+def verify_aliases(dburi, only=None, namespace='tsh'):
+    " verify aliases wholesale (all or per type using --only) "
+    if only is None:
+        tables = TABLES
+    else:
+        assert only in TABLES
+        tables = [only]
+
+    engine = create_engine(dburi)
+    tsh = tsio.TimeSerie(namespace=namespace)
+    for table in tables:
+        colname = 'serie' if table == 'outliers' else 'alias'
+        for row in engine.execute(
+                f'select {colname} from "{namespace}-alias"."{table}"'
+        ).fetchall():
+            name = row[0]
+            try:
+                series = tsh.get(engine, name)
+            except tsio.AliasError as err:
+                print(err)
+            print(name, len(series))

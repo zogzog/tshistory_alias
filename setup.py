@@ -14,7 +14,8 @@ setup(name='tshistory_alias',
           'register-arithmetic=tshistory_alias.cli:register_arithmetic',
           'register-outliers=tshistory_alias.cli:register_outliers',
           'remove-alias=tshistory_alias.cli:remove_alias',
-          'reset-aliases=tshistory_alias.cli:reset_aliases'
+          'reset-aliases=tshistory_alias.cli:reset_aliases',
+          'verify-aliases=tshistory_alias.cli:verify_aliases'
       ]},
       classifiers=[
           'Development Status :: 4 - Beta',
