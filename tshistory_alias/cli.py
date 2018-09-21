@@ -95,4 +95,8 @@ def verify_aliases(dburi, only=None, namespace='tsh'):
                 series = tsh.get(engine, name)
             except tsio.AliasError as err:
                 print(err)
+            else:
+                if not series.index.is_monotonic_increasing:
+                    print(name, 'is non monotonic')
+
             print(name, len(series))
