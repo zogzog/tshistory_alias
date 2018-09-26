@@ -121,7 +121,7 @@ class TimeSerie(BaseTs):
             if ts is None:
                 continue
 
-            if (not pd.isnull(row.coefficient) and ts.dtype != 'O'):
+            if ts.dtype != 'O' and row.coefficient != 1:
                 ts = ts * row.coefficient
 
             ts_id = pd.Series(name, index=ts.index)
@@ -147,6 +147,7 @@ class TimeSerie(BaseTs):
         )
 
         first_iteration = True
+        df_result = None
         ts_with_fillopt = {}
 
         for row in res.fetchall():
@@ -165,10 +166,15 @@ class TimeSerie(BaseTs):
                 ts_with_fillopt[ts.name] = row.fillopt
 
             if first_iteration:
-                df_result = ts.to_frame() * row.coefficient
-                first_iteration=False
+                if row.coefficient != 1:
+                    ts = ts * row.coefficient
+                df_result = ts.to_frame()
+                first_iteration = False
                 continue
-            df_result = df_result.join(ts * row.coefficient, how='outer')
+
+            if row.coefficient != 1:
+                ts = ts * row.coefficient
+            df_result = df_result.join(ts, how='outer')
 
         for ts, fillopt in ts_with_fillopt.items():
             for method in fillopt.split(','):
