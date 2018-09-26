@@ -139,13 +139,17 @@ class TimeSerie(BaseTs):
                         delta=None,
                         from_value_date=None,
                         to_value_date=None):
-        df = pd.read_sql(
-            'select * from "{}-alias".arithmetic where alias = %(alias)s'.format(self.namespace),
-                         cn, params={'alias': alias}
+        res = cn.execute(
+            f'select serie, fillopt, coefficient '
+            f'from "{self.namespace}-alias".arithmetic '
+            f'where alias = %(alias)s',
+            alias=alias
         )
+
         first_iteration = True
         ts_with_fillopt = {}
-        for row in df.itertuples():
+
+        for row in res.fetchall():
             ts = self.get(
                 cn, row.serie, revision_date,
                 delta=delta,
