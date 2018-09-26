@@ -26,3 +26,13 @@ def engine(request):
 @pytest.fixture(scope='session')
 def tsh(request, engine):
     return TimeSerie()
+
+
+def pytest_addoption(parser):
+    parser.addoption('--refresh-refs', action='store_true', default=False,
+                     help='refresh reference outputs')
+
+
+@pytest.fixture
+def refresh(request):
+    return request.config.getoption('--refresh-refs')

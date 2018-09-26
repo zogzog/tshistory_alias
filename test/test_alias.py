@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytest
 import pandas as pd
@@ -6,6 +7,8 @@ import pandas as pd
 from tshistory.testutil import genserie, utcdt
 from tshistory_alias.helpers import alias_table
 
+
+DATADIR = Path(__file__).parent / 'data'
 
 
 def assert_df(expected, df):
@@ -334,7 +337,7 @@ def test_dispatch_get(engine, tsh):
 """, tsh.get(engine,'sum_serie'))
 
 
-def test_micmac(engine, tsh):
+def test_micmac(engine, tsh, refresh):
     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 5, [1]), 'micmac1', 'test')
     tsh.insert(engine, genserie(datetime(2010, 1, 2), 'D', 1, [1000]), 'micmac1', 'test') # bogus data
     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 6, [2]), 'micmac2', 'test')
@@ -376,6 +379,13 @@ def test_micmac(engine, tsh):
     inside = dash_html_table.children
     assert 8 == len(inside)
     assert 4 == len(inside[0].children)
+
+    refpath = DATADIR / 'dash-table.html'
+    out = str(dash_html_table).encode('utf-8')
+    if refresh:
+        refpath.write_bytes(out)
+    expected = refpath.read_bytes()
+    assert expected == out
 
 
 def test_errors(engine, tsh):

@@ -40,7 +40,7 @@ class alias_schema():
             Column('alias', String, nullable=False, index=True),
             Column('serie', String, nullable=False, index=True),
             Column('priority', Integer, nullable=False),
-            Column('coefficient', Float),
+            Column('coefficient', Float, default=1),
             Column('prune', Integer, default=0),
             schema=self.namespace
         )
