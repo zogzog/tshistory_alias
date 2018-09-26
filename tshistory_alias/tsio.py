@@ -98,16 +98,18 @@ class TimeSerie(BaseTs):
                      from_value_date=None,
                      to_value_date=None):
 
-        df = pd.read_sql(
-            'select * from "{}-alias".priority as prio '
-            'where prio.alias = %(alias)s '
-            'order by priority desc'.format(self.namespace),
-            cn, params={'alias': alias}
+        res = cn.execute(
+            f'select serie, prune, coefficient '
+            f'from "{self.namespace}-alias".priority as prio '
+            f'where prio.alias = %(alias)s '
+            f'order by priority desc',
+            alias=alias
         )
+
         ts_values = pd.Series()
         ts_origins = pd.Series()
 
-        for row in df.itertuples():
+        for row in res.fetchall():
             name = row.serie
             prune = row.prune
             ts = self.get(
@@ -119,8 +121,7 @@ class TimeSerie(BaseTs):
             if ts is None:
                 continue
 
-            if (not pd.isnull(row.coefficient) and
-                ts.dtype != 'O'):
+            if (not pd.isnull(row.coefficient) and ts.dtype != 'O'):
                 ts = ts * row.coefficient
 
             ts_id = pd.Series(name, index=ts.index)
