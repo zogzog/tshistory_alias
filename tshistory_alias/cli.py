@@ -100,3 +100,19 @@ def verify_aliases(dburi, only=None, namespace='tsh'):
                     print(name, 'is non monotonic')
 
             print(name, len(series))
+
+
+@click.command(name='migrate-alias-0.1-to-0.2')
+@click.argument('dburi')
+@click.option('--namespace', default='tsh')
+def migrate_dot_one_to_dot_two(dburi, namespace='tsh'):
+    engine = create_engine(dburi)
+
+    sql = f'alter table "{namespace}-alias".priority alter column coefficient set default 1'
+    with engine.begin() as cn:
+        cn.execute(sql)
+
+    sql = f'update "{namespace}-alias".priority set coefficient = 1 where coefficient is NULL'
+    with engine.begin() as cn:
+        cn.execute(sql)
+
