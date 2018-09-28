@@ -1,6 +1,43 @@
 import pandas as pd
 
 
+def buildtree(engine, tsh, alias, ancestors, depth=0):
+    kind = tsh._typeofserie(engine, alias)
+    if kind == 'primary':
+        return alias
+
+    ancestors.append(alias)
+
+    series = [name for name, in engine.execute(
+        f'select serie from "{tsh.namespace}-alias".{kind} '
+        'where alias = %(alias)s', alias=alias).fetchall()
+    ]
+    leaves = []
+    for name in series:
+        if name in ancestors:
+            print(name, 'in ancestors', ancestors)
+            raise Exception('Loop')
+        leaves.append(buildtree(engine, tsh, name, ancestors, depth+1))
+
+    ancestors.pop()
+    return {(alias, kind): leaves}
+
+def sortkey(item):
+    if isinstance(item, str):
+        return item
+    return f'ZZZ-{item}'
+
+
+def showtree(tree, depth=0):
+    if isinstance(tree, str):
+        print('    ' * depth, '-', tree)
+        return
+    for (alias, kind), children in tree.items():
+        print('    ' * depth, f'* {kind} `{alias}`')
+        for child in sorted(children, key=sortkey):
+            showtree(child, depth + 1)
+
+
 def alias_table(engine, tsh, id_serie, fromdate=None, todate=None,
                 author=None, additionnal_info=None, url_base_pathname=''):
     '''

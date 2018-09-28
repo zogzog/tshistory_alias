@@ -1,8 +1,9 @@
+from collections import defaultdict
 import click
 
 from sqlalchemy import create_engine
 
-from tshistory_alias import db, tsio
+from tshistory_alias import db, tsio, helpers
 
 
 @click.command(name='register-priorities')
@@ -69,6 +70,41 @@ def reset_aliases(dburi, only=None, namespace='tsh'):
     for table in tables:
         with engine.begin() as cn:
             cn.execute(f'delete from "{namespace}-alias"."{table}"')
+
+
+@click.command(name='audit-aliases')
+@click.argument('dburi')
+@click.option('--alias', help='specific alias name (all by default)')
+@click.option('--namespace', default='tsh')
+def audit_aliases(dburi, alias=None, namespace='tsh'):
+    " perform a visual audit of aliases "
+    engine = create_engine(dburi)
+
+    aliases = []
+    if alias:
+        # verify
+        for kind in ('priority', 'arithmetic'):
+            sql = (f'select exists(select id from "{namespace}-alias".{kind} '
+                   '               where alias = %(alias)s)')
+            if engine.execute(sql, alias=alias).scalar():
+                aliases.append(alias)
+        assert len(aliases) == 1
+    else:
+        for kind in ('priority', 'arithmetic'):
+            aliases = [alias for alias, in engine.execute(
+                f'select distinct alias from "{namespace}-alias".{kind}').fetchall()
+            ]
+    tsh = tsio.TimeSerie(namespace=namespace)
+
+    trees = []
+
+    for idx, alias in enumerate(aliases):
+        trees.append(helpers.buildtree(engine, tsh, alias, []))
+
+    # now, display shit
+    for tree in trees:
+        print('-' * 70)
+        helpers.showtree(tree)
 
 
 @click.command(name='verify-aliases')
