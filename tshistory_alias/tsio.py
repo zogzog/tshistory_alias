@@ -7,8 +7,6 @@ from tshistory_supervision.tsio import TimeSerie as BaseTs
 from tshistory_alias.schema import alias_schema
 
 
-KIND = {}  # ts name to kind
-BOUNDS = {}
 
 class AliasError(Exception):
     pass
@@ -16,6 +14,8 @@ class AliasError(Exception):
 
 class TimeSerie(BaseTs):
     alias_schema = None
+    KIND = {}  # ts name to kind
+    BOUNDS = {}
 
     def __init__(self, namespace='tsh'):
         super().__init__(namespace)
@@ -23,22 +23,22 @@ class TimeSerie(BaseTs):
         self.alias_schema.define()
 
     def _typeofserie(self, cn, name, default='primary'):
-        if name in KIND:
-            return KIND[name]
+        if name in self.KIND:
+            return self.KIND[name]
 
         priority = exists().where(self.alias_schema.priority.c.alias == name)
         arith = exists().where(self.alias_schema.arithmetic.c.alias == name)
         if cn.execute(select([priority])).scalar():
-            KIND[name] = 'priority'
+            self.KIND[name] = 'priority'
         elif cn.execute(select([arith])).scalar():
-            KIND[name] = 'arithmetic'
+            self.KIND[name] = 'arithmetic'
         else:
             if self.exists(cn, name):
-                KIND[name] = 'primary'
+                self.KIND[name] = 'primary'
             else:
                 return default
 
-        return KIND[name]
+        return self.KIND[name]
 
     def insert(self, cn, newts, name, author, **kw):
         serie_type = self._typeofserie(cn, name)
@@ -90,15 +90,15 @@ class TimeSerie(BaseTs):
 
     def apply_bounds(self, cn, ts, name):
         outliers = self.alias_schema.outliers
-        if name not in BOUNDS:
+        if name not in self.BOUNDS:
             mini_maxi = cn.execute(
                 select([outliers.c.min, outliers.c.max]
                 ).where(
                     outliers.c.serie==name)
             ).fetchone()
-            BOUNDS[name] = mini_maxi
+            self.BOUNDS[name] = mini_maxi
 
-        mini_maxi = BOUNDS[name]
+        mini_maxi = self.BOUNDS[name]
         if not mini_maxi:
             return ts
 
@@ -219,7 +219,7 @@ class TimeSerie(BaseTs):
         if min is None and max is None:
             return
 
-        BOUNDS.pop(name, None)
+        self.BOUNDS.pop(name, None)
         value = {
             'serie': name,
             'min': min,
