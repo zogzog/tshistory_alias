@@ -26,6 +26,7 @@ class TimeSerie(BaseTs):
         if name in self.KIND:
             return self.KIND[name]
 
+        # cache-filling
         priority = exists().where(self.alias_schema.priority.c.alias == name)
         arith = exists().where(self.alias_schema.arithmetic.c.alias == name)
         if cn.execute(select([priority])).scalar():
@@ -33,12 +34,19 @@ class TimeSerie(BaseTs):
         elif cn.execute(select([arith])).scalar():
             self.KIND[name] = 'arithmetic'
         else:
-            if self.exists(cn, name):
+            # hack to avoid an infinite loop
+            if default is 'primary' and self.exists(cn, name):
                 self.KIND[name] = 'primary'
-            else:
-                return default
+            return default
 
         return self.KIND[name]
+
+    def exists(self, cn, name):
+        if super().exists(cn, name):
+            return True
+
+        kind = self._typeofserie(cn, name, None)
+        return kind is not None
 
     def insert(self, cn, newts, name, author, **kw):
         serie_type = self._typeofserie(cn, name)
@@ -234,22 +242,18 @@ class TimeSerie(BaseTs):
         print('insert {} in outliers table'.format(name))
 
     def _handle_conflict(self, cn, alias, override):
-        kind = self._typeofserie(cn, alias, default=None)
-        if kind is not None:
+        kind = self._typeofserie(cn, alias, 'noatanalias')
+        if kind != 'notanalias':
             if override:
                 print('overriding serie {} ({})'.format(alias, kind))
                 cn.execute('delete from "tsh-alias".{} as al where al.alias = %(alias)s'.format(kind),
                            {'alias': alias})
-            else:
+            elif self.exists(cn, alias):
                 print('{} serie {} already exists'.format(kind, alias))
                 return False
         return True
 
     def build_priority(self, cn, alias, names, map_prune=None, map_coef=None, override=False):
-        if self.exists(cn, alias):
-            print('primary serie {} already exists'.format(alias))
-            return
-
         if not self._handle_conflict(cn, alias, override):
             return
 
@@ -267,10 +271,6 @@ class TimeSerie(BaseTs):
             cn.execute(table.insert(values))
 
     def build_arithmetic(self, cn, alias, map_coef, map_fillopt=None, override=False):
-        if self.exists(cn, alias):
-            print('primary serie {} already exists'.format(alias))
-            return
-
         if not self._handle_conflict(cn, alias, override):
             return
 
