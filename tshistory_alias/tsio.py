@@ -41,12 +41,18 @@ class TimeSerie(BaseTs):
 
         return self.KIND[name]
 
-    def exists(self, cn, name):
+    def exists(self, cn, name, kind=None):
+        assert kind in (None, 'primary', 'priority', 'arithmetic')
         if super().exists(cn, name):
             return True
 
-        kind = self._typeofserie(cn, name, None)
-        return kind is not None
+        if kind == 'primary':
+            return False
+
+        realkind = self._typeofserie(cn, name, None)
+        if kind is None:
+            return realkind is not None
+        return realkind == kind
 
     def insert(self, cn, newts, name, author, **kw):
         serie_type = self._typeofserie(cn, name)

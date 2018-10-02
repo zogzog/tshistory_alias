@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 
 from tshistory.testutil import genserie, utcdt
-from tshistory_alias.helpers import alias_table
+from tshistory_alias.helpers import alias_table, buildtree, showtree
 
 
 DATADIR = Path(__file__).parent / 'data'
@@ -386,6 +386,45 @@ def test_micmac(engine, tsh, refresh):
         refpath.write_bytes(out)
     expected = refpath.read_bytes()
     assert expected == out
+
+    tree = buildtree(engine, tsh, 'final', [])
+    assert tree == {
+        ('final', 'priority'): [
+            {('arithmetic1', 'arithmetic'): [
+                {
+                    ('prio1', 'priority'): [
+                        'micmac1',
+                        'micmac2']
+                },
+                'micmac3'
+            ]},
+            'micmac4'
+        ]
+    }
+    out = []
+    showtree(tree, printer=lambda *x: out.append(''.join(x)))
+    assert out == [
+        '* priority `final`',
+        '    * arithmetic `arithmetic1`',
+        '        * priority `prio1`',
+        '            -micmac1',
+        '            -micmac2',
+        '        -micmac3',
+        '    -micmac4'
+    ]
+
+    tsh.build_priority(engine, 'bogus',
+                       ['prio1', 'no-such-series'])
+    tree = buildtree(engine, tsh, 'bogus', [])
+    out = []
+    showtree(tree, printer=lambda *x: out.append(''.join(x)))
+    assert out == [
+        '* priority `bogus`',
+        '    * priority `prio1`',
+        '        -micmac1',
+        '        -micmac2',
+        '    -unknown `no-such-series`'
+    ]
 
 
 def test_errors(engine, tsh):

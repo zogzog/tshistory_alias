@@ -4,6 +4,8 @@ import pandas as pd
 def buildtree(engine, tsh, alias, ancestors, depth=0):
     kind = tsh._typeofserie(engine, alias)
     if kind == 'primary':
+        if not tsh.exists(engine, alias, 'primary'):
+            return f'unknown `{alias}`'
         return alias
 
     ancestors.append(alias)
@@ -22,20 +24,21 @@ def buildtree(engine, tsh, alias, ancestors, depth=0):
     ancestors.pop()
     return {(alias, kind): leaves}
 
+
 def sortkey(item):
     if isinstance(item, str):
         return item
     return f'ZZZ-{item}'
 
 
-def showtree(tree, depth=0):
+def showtree(tree, depth=0, printer=print):
     if isinstance(tree, str):
-        print('    ' * depth, '-', tree)
+        printer('    ' * depth, '-', tree)
         return
     for (alias, kind), children in tree.items():
-        print('    ' * depth, f'* {kind} `{alias}`')
+        printer('    ' * depth, f'* {kind} `{alias}`')
         for child in sorted(children, key=sortkey):
-            showtree(child, depth + 1)
+            showtree(child, depth + 1, printer)
 
 
 def alias_table(engine, tsh, id_serie, fromdate=None, todate=None,
