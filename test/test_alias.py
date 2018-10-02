@@ -426,6 +426,27 @@ def test_micmac(engine, tsh, refresh):
         '    -unknown `no-such-series`'
     ]
 
+    # test .exists
+
+    assert tsh.exists(engine, 'micmac1')
+    assert tsh.exists(engine, 'micmac1', 'primary')
+    assert not tsh.exists(engine, 'micmac1', 'priority')
+    assert not tsh.exists(engine, 'micmac1', 'arithmetic')
+
+    assert tsh.exists(engine, 'final')
+    assert tsh.exists(engine, 'final', 'priority')
+    assert not tsh.exists(engine, 'final', 'primary')
+    assert not tsh.exists(engine, 'final', 'arithmetic')
+
+    assert tsh.exists(engine, 'arithmetic1')
+    assert tsh.exists(engine, 'arithmetic1', 'arithmetic')
+    assert not tsh.exists(engine, 'arithmetic1', 'primary')
+    assert not tsh.exists(engine, 'arithmetic1', 'priority')
+
+    for kind in (None, 'primary', 'priority', 'arithmetic'):
+        assert not tsh.exists(engine, 'no-such-series')
+
+
 
 def test_errors(engine, tsh):
     tsh.insert(engine, genserie(datetime(2010, 1, 1), 'D', 5, [1]), 'primary_series', 'test')

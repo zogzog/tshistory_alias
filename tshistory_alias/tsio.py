@@ -43,7 +43,7 @@ class TimeSerie(BaseTs):
 
     def exists(self, cn, name, kind=None):
         assert kind in (None, 'primary', 'priority', 'arithmetic')
-        if super().exists(cn, name):
+        if kind in (None, 'primary') and super().exists(cn, name):
             return True
 
         if kind == 'primary':
