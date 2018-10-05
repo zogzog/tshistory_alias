@@ -2,13 +2,13 @@ from setuptools import setup
 
 
 setup(name='tshistory_alias',
-      version='0.1.0',
+      version='0.2.0',
       author='Pythonian',
       author_email='arnaud.campeas@pythonian.fr, aurelien.campeas@pythonian.fr',
-      description='Computed timeseries using real timeseries',
+      description='Computed timeseries on top of the `tshistory` package',
 
       packages=['tshistory_alias'],
-      install_requires=['tshistory_supervision'],
+      install_requires=['tshistory-supervision == 0.3.0'],
       entry_points={'tshistory.subcommands': [
           'register-priorities=tshistory_alias.cli:register_priorities',
           'register-arithmetic=tshistory_alias.cli:register_arithmetic',
