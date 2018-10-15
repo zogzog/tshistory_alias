@@ -124,7 +124,7 @@ def verify_aliases(dburi, only=None, namespace='tsh'):
     for table in tables:
         colname = 'serie' if table == 'outliers' else 'alias'
         for row in engine.execute(
-                f'select {colname} from "{namespace}-alias"."{table}"'
+                f'select distinct {colname} from "{namespace}-alias"."{table}"'
         ).fetchall():
             name = row[0]
             try:
