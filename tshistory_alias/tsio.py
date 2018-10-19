@@ -248,7 +248,7 @@ class TimeSerie(BaseTs):
         print('insert {} in outliers table'.format(name))
 
     def _handle_conflict(self, cn, alias, override):
-        kind = self._typeofserie(cn, alias, 'noatanalias')
+        kind = self._typeofserie(cn, alias, 'notanalias')
         if kind != 'notanalias':
             if override:
                 print('overriding serie {} ({})'.format(alias, kind))
