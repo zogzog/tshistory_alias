@@ -413,13 +413,13 @@ def test_micmac(engine, tsh, refresh):
         '    -micmac4'
     ]
 
-    tsh.build_priority(engine, 'bogus',
+    tsh.build_priority(engine, 'bogus2',
                        ['prio1', 'no-such-series'])
-    tree = buildtree(engine, tsh, 'bogus', [])
+    tree = buildtree(engine, tsh, 'bogus2', [])
     out = []
     showtree(tree, printer=lambda *x: out.append(''.join(x)))
     assert out == [
-        '* priority `bogus`',
+        '* priority `bogus2`',
         '    * priority `prio1`',
         '        -micmac1',
         '        -micmac2',
