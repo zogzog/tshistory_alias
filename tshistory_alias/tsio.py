@@ -61,7 +61,7 @@ class TimeSerie(BaseTs):
                 name, serie_type)
             )
 
-        return super(TimeSerie, self).insert(cn, newts, name, author=author, **kw)
+        return super().insert(cn, newts, name, author=author, **kw)
 
     def get(self, cn, name, revision_date=None, delta=None,
             from_value_date=None, to_value_date=None, _keep_nans=False):
@@ -70,7 +70,7 @@ class TimeSerie(BaseTs):
         ts = None
         if serie_type == 'primary':
             if not delta:
-                ts = super(TimeSerie, self).get(
+                ts = super().get(
                     cn, name, revision_date,
                     from_value_date=from_value_date,
                     to_value_date=to_value_date,
