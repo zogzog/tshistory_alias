@@ -8,7 +8,7 @@ setup(name='tshistory_alias',
       description='Computed timeseries on top of the `tshistory` package',
 
       packages=['tshistory_alias'],
-      install_requires=['tshistory-supervision == 0.3.0'],
+      install_requires=['tshistory'],
       entry_points={'tshistory.subcommands': [
           'register-priorities=tshistory_alias.cli:register_priorities',
           'register-arithmetic=tshistory_alias.cli:register_arithmetic',

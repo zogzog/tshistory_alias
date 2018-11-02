@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 import pandas as pd
 
-from tshistory_supervision.tsio import TimeSerie as BaseTs
+from tshistory.tsio import TimeSerie as BaseTs
 from tshistory_alias.schema import alias_schema
 
 
