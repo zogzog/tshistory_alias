@@ -25,7 +25,9 @@ def engine(request):
 
 @pytest.fixture(scope='session')
 def tsh(request, engine):
-    return TimeSerie()
+    tsh = TimeSerie()
+    tsh._testing = True
+    return tsh
 
 
 def pytest_addoption(parser):
