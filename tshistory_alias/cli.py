@@ -1,7 +1,9 @@
+from pathlib import Path
 from collections import defaultdict
-import click
 
+import click
 from sqlalchemy import create_engine
+import pandas as pd
 
 from tshistory.util import find_dburi
 from tshistory_alias import db, tsio, helpers
@@ -73,6 +75,15 @@ def reset_aliases(dburi, only=None, namespace='tsh'):
             cn.execute(f'delete from "{namespace}-alias"."{table}"')
 
 
+def _alias_kind(alias):
+    for kind in ('priority', 'arithmetic'):
+        sql = (f'select exists(select id from "{namespace}-alias".{kind} '
+               '               where alias = %(alias)s)')
+        if engine.execute(sql, alias=alias).scalar():
+            return kind
+    return None
+
+
 @click.command(name='audit-aliases')
 @click.argument('dburi')
 @click.option('--alias', help='specific alias name (all by default)')
@@ -84,12 +95,8 @@ def audit_aliases(dburi, alias=None, namespace='tsh'):
     aliases = []
     if alias:
         # verify
-        for kind in ('priority', 'arithmetic'):
-            sql = (f'select exists(select id from "{namespace}-alias".{kind} '
-                   '               where alias = %(alias)s)')
-            if engine.execute(sql, alias=alias).scalar():
-                aliases.append(alias)
-        assert len(aliases) == 1
+        if _alias_kind(alias) is not None:
+            aliases.append(alias)
     else:
         for kind in ('priority', 'arithmetic'):
             aliases = [alias for alias, in engine.execute(
@@ -106,6 +113,81 @@ def audit_aliases(dburi, alias=None, namespace='tsh'):
     for tree in trees:
         print('-' * 70)
         helpers.showtree(tree)
+
+
+@click.command('export-aliases')
+@click.argument('dburi')
+@click.argument('aliases', nargs=-1)
+@click.option('--namespace', default='tsh')
+def export_aliases(dburi, aliases, namespace='tsh'):
+    engine = create_engine(find_dburi(dburi))
+    tsh = tsio.TimeSerie(namespace=namespace)
+
+    trees = []
+    for alias in aliases:
+        trees.append(helpers.buildtree(engine, tsh, alias, []))
+
+    data = {
+        'primary': set(),
+        'arithmetic': set(),
+        'priority': set()
+    }
+
+    def collect(tree):
+        if isinstance(tree, str):
+            if tree.startswith('unknown'):
+                print(f'skipping {tree}')
+            else:
+                data['primary'].add(tree)
+            return
+
+        for (alias, kind), subtrees in tree.items():
+            data[kind].add(alias)
+            for subtree in subtrees:
+                collect(subtree)
+
+    for tree in trees:
+        collect(tree)
+
+    Path('primary.csv').write_bytes(
+        '\n'.join(data['primary']).encode('utf-8')
+    )
+
+    arith = []
+    for name in data['arithmetic']:
+        out = engine.execute(
+            f'select alias, serie, coefficient, fillopt '
+            f'from "{namespace}-alias".arithmetic '
+            f'where alias = %(name)s '
+            f'order by alias',
+            name=name
+        ).fetchall()
+        arith.extend(dict(row) for row in out)
+
+    df = pd.DataFrame(arith)
+    df.to_csv(
+        Path('arith.csv'),
+        columns=('alias', 'serie', 'coefficient', 'fillopt'),
+        index=False
+    )
+
+    prio = []
+    for name in data['priority']:
+        out = engine.execute(
+            f'select alias, serie, priority, coefficient, prune '
+            f'from "{namespace}-alias".priority '
+            f'where alias = %(name)s '
+            f'order by alias, priority asc',
+            name=name
+        ).fetchall()
+        prio.extend(dict(row) for row in out)
+
+    df = pd.DataFrame(prio)
+    df.to_csv(
+        Path('prio.csv'),
+        columns=('alias', 'serie', 'priority', 'coefficient', 'prune'),
+        index=False
+    )
 
 
 @click.command(name='verify-aliases')

@@ -17,6 +17,7 @@ setup(name='tshistory_alias',
           'reset-aliases=tshistory_alias.cli:reset_aliases',
           'verify-aliases=tshistory_alias.cli:verify_aliases',
           'audit-aliases=tshistory_alias.cli:audit_aliases',
+          'export-aliases=tshistory_alias.cli:export_aliases',
           'migrate-alias-0.1-to-0.2=tshistory_alias.cli:migrate_dot_one_to_dot_two'
       ]},
       classifiers=[
