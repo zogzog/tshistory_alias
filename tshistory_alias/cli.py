@@ -3,6 +3,7 @@ import click
 
 from sqlalchemy import create_engine
 
+from tshistory.util import find_dburi
 from tshistory_alias import db, tsio, helpers
 
 
@@ -12,7 +13,7 @@ from tshistory_alias import db, tsio, helpers
 @click.option('--override', is_flag=True, default=False)
 def register_priorities(dburi, priority_file, override=False):
     " register priorities timeseries aliases "
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
     with engine.begin() as cn:
         db.register_priority(cn, priority_file, override)
 
@@ -23,7 +24,7 @@ def register_priorities(dburi, priority_file, override=False):
 @click.option('--override', is_flag=True, default=False)
 def register_arithmetic(dburi, arithmetic_file, override):
     " register arithmetic timeseries aliases "
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
     with engine.begin() as cn:
         db.register_arithmetic(cn, arithmetic_file, override)
 
@@ -34,7 +35,7 @@ def register_arithmetic(dburi, arithmetic_file, override):
 @click.option('--override', is_flag=True, default=False)
 def register_outliers(dburi, outliers_file, override):
     " register outlier definitions "
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
     with engine.begin() as cn:
         db.register_outliers(cn, outliers_file, override)
 
@@ -46,7 +47,7 @@ def register_outliers(dburi, outliers_file, override):
 @click.option('--namespace', default='tsh')
 def remove_alias(dburi, alias_type, alias, namespace='tsh'):
     "remove singe alias"
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
     table = '"{}-alias".{}'.format(namespace, alias_type)
     sql = "delete from {} where alias = %(alias)s".format(table)
     with engine.begin() as cn:
@@ -66,7 +67,7 @@ def reset_aliases(dburi, only=None, namespace='tsh'):
         assert only in TABLES
         tables = [only]
 
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
     for table in tables:
         with engine.begin() as cn:
             cn.execute(f'delete from "{namespace}-alias"."{table}"')
@@ -78,7 +79,7 @@ def reset_aliases(dburi, only=None, namespace='tsh'):
 @click.option('--namespace', default='tsh')
 def audit_aliases(dburi, alias=None, namespace='tsh'):
     " perform a visual audit of aliases "
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
 
     aliases = []
     if alias:
@@ -119,7 +120,7 @@ def verify_aliases(dburi, only=None, namespace='tsh'):
         assert only in TABLES
         tables = [only]
 
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
     tsh = tsio.TimeSerie(namespace=namespace)
     for table in tables:
         colname = 'serie' if table == 'outliers' else 'alias'
@@ -142,7 +143,7 @@ def verify_aliases(dburi, only=None, namespace='tsh'):
 @click.argument('dburi')
 @click.option('--namespace', default='tsh')
 def migrate_dot_one_to_dot_two(dburi, namespace='tsh'):
-    engine = create_engine(dburi)
+    engine = create_engine(find_dburi(dburi))
 
     sql = f'alter table "{namespace}-alias".priority alter column coefficient set default 1'
     with engine.begin() as cn:
