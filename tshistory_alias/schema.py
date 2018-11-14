@@ -31,7 +31,8 @@ class alias_schema():
             Column('serie', String, primary_key=True, unique=True),
             Column('min', Float),
             Column('max', Float),
-            schema=self.namespace
+            schema=self.namespace,
+            keep_existing=True
         )
 
         self.priority = Table(
@@ -42,7 +43,8 @@ class alias_schema():
             Column('priority', Integer, nullable=False),
             Column('coefficient', Float, default=1),
             Column('prune', Integer, default=0),
-            schema=self.namespace
+            schema=self.namespace,
+            keep_existing=True
         )
 
         self.arithmetic = Table(
@@ -52,7 +54,8 @@ class alias_schema():
             Column('serie', String, nullable=False, index=True),
             Column('coefficient', Float, default=1),
             Column('fillopt', String),
-            schema=self.namespace
+            schema=self.namespace,
+            keep_existing=True
         )
         SCHEMAS[self.namespace] = self
 
