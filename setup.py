@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(name='tshistory_alias',
-      version='0.2.0',
+      version='0.3.0',
       author='Pythonian',
       author_email='arnaud.campeas@pythonian.fr, aurelien.campeas@pythonian.fr',
       description='Computed timeseries on top of the `tshistory` package',
