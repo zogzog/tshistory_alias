@@ -235,3 +235,12 @@ def migrate_dot_one_to_dot_two(dburi, namespace='tsh'):
     with engine.begin() as cn:
         cn.execute(sql)
 
+
+@click.command(name='shell')
+@click.argument('db-uri')
+@click.option('--namespace', default='tsh')
+def shell(db_uri, namespace='tsh'):
+    e = create_engine(find_dburi(db_uri))
+
+    tsh = tsio.TimeSerie(namespace)
+    import pdb; pdb.set_trace()
