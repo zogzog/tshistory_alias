@@ -1,3 +1,4 @@
+from threading import Lock
 from sqlalchemy import exists, select
 from sqlalchemy.dialects.postgresql import insert
 
@@ -14,6 +15,7 @@ class AliasError(Exception):
 
 class TimeSerie(BaseTs):
     alias_schema = None
+    cachelock = Lock()
     KIND = {}  # ts name to kind
     BOUNDS = {}
 
@@ -21,6 +23,12 @@ class TimeSerie(BaseTs):
         super().__init__(namespace)
         self.alias_schema = alias_schema(namespace)
         self.alias_schema.define()
+
+    def _resetcaches(self):
+        with self.cachelock:
+            super()._resetcaches()
+            self.KIND.clear()
+            self.BOUNDS.clear()
 
     def _typeofserie(self, cn, name, default='primary'):
         if name in self.KIND:
@@ -230,6 +238,7 @@ class TimeSerie(BaseTs):
     # alias definition/construction
 
     def add_bounds(self, cn, name, min=None, max=None):
+        self._resetcaches()
         if min is None and max is None:
             return
 
@@ -260,6 +269,7 @@ class TimeSerie(BaseTs):
         return True
 
     def build_priority(self, cn, alias, names, map_prune=None, map_coef=None, override=False):
+        self._resetcaches()
         if not self._handle_conflict(cn, alias, override):
             return
 
@@ -277,6 +287,7 @@ class TimeSerie(BaseTs):
             cn.execute(table.insert(values))
 
     def build_arithmetic(self, cn, alias, map_coef, map_fillopt=None, override=False):
+        self._resetcaches()
         if not self._handle_conflict(cn, alias, override):
             return
 
