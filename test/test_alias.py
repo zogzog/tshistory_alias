@@ -205,9 +205,16 @@ def test_combine(engine, tsh):
 def test_arithmetic(engine, tsh):
     ts_toto = genserie(datetime(2010, 1, 1), 'D', 7, [1])
     ts_tata = genserie(datetime(2010, 1, 3), 'D', 7, [2])
+    ts_titi = genserie(datetime(2010, 1, 1), 'D', 5, [2])
+    ts_short = genserie(datetime(2010, 1, 3), 'D', 3, [2])
+
+
 
     tsh.insert(engine, ts_toto, 'toto', 'test')
     tsh.insert(engine, ts_tata, 'tata', 'test')
+    tsh.insert(engine, ts_titi, 'titi', 'test')
+    tsh.insert(engine, ts_short, 'short', 'test')
+
 
     tsh.build_arithmetic(engine, 'sum', {'toto': 1,
                                          'tata': 1})
@@ -226,6 +233,12 @@ def test_arithmetic(engine, tsh):
 
     tsh.build_arithmetic(engine, 'backwardfill', {'toto': 1,
                                                   'tata': 1}, {'tata': 'bfill'})
+
+    tsh.build_arithmetic(engine, 'allfill', {'toto': 1,
+                                             'short': 1}, {'short': 'bfill,ffill'})
+
+    tsh.build_arithmetic(engine, 'storagelike', {'toto': 1,
+                                                 'titi': 1}, {'titi': 'fill=0'})
 
     values = tsh.get_arithmetic(engine, 'sum')
 
@@ -280,6 +293,30 @@ def test_arithmetic(engine, tsh):
 2010-01-05    3.0
 2010-01-06    3.0
 2010-01-07    3.0
+""", values)
+
+    values = tsh.get_arithmetic(engine, 'allfill')
+
+    assert_df("""
+2010-01-01    3.0
+2010-01-02    3.0
+2010-01-03    3.0
+2010-01-04    3.0
+2010-01-05    3.0
+2010-01-06    3.0
+2010-01-07    3.0
+""", values)
+
+    values = tsh.get_arithmetic(engine, 'storagelike')
+
+    assert_df("""
+2010-01-01    3.0
+2010-01-02    3.0
+2010-01-03    3.0
+2010-01-04    3.0
+2010-01-05    3.0
+2010-01-06    1.0
+2010-01-07    1.0
 """, values)
 
     with pytest.raises(Exception) as err:

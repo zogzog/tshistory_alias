@@ -217,6 +217,10 @@ class TimeSerie(BaseTs):
             df_result = df_result.join(ts, how='outer')
 
         for ts, fillopt in ts_with_fillopt.items():
+            if fillopt.startswith('fill='):
+                filler = float(fillopt.split('=')[1])
+                df_result[ts] = df_result[ts].fillna(filler)
+                continue
             for method in fillopt.split(','):
                 df_result[ts] = df_result[ts].fillna(method=method.strip())
 
