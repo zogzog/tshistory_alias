@@ -375,6 +375,25 @@ def test_micmac(engine, tsh, refresh):
 2010-01-07    15.0
 """, tsh.get(engine, 'final'))
 
+    # test get with bounds
+    assert_df("""
+2010-01-03     4.0
+2010-01-04     5.0
+2010-01-05    15.0
+2010-01-06    15.0
+""", tsh.get(engine, 'final',
+             from_value_date = datetime(2010, 1, 3),
+             to_value_date=datetime(2010, 1, 6)
+             ))
+
+    # test get with values out of bounds
+    ts_out_of_bounds = tsh.get(engine, 'final',
+                               from_value_date=datetime(2013, 1, 1),
+                               to_value_date=datetime(2013, 1, 6)
+                               )
+    assert 0 == len(ts_out_of_bounds)
+    # the result is an empty pd.Series
+
     dash_html_table = alias_table(engine, tsh, 'final')
     inside = dash_html_table.children
     assert 8 == len(inside)
