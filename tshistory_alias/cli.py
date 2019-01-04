@@ -99,7 +99,7 @@ def audit_aliases(dburi, alias=None, namespace='tsh'):
             aliases.append(alias)
     else:
         for kind in ('priority', 'arithmetic'):
-            aliases = [alias for alias, in engine.execute(
+            aliases += [alias for alias, in engine.execute(
                 f'select distinct alias from "{namespace}-alias".{kind}').fetchall()
             ]
     tsh = tsio.TimeSerie(namespace=namespace)
