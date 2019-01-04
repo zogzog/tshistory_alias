@@ -75,7 +75,7 @@ def reset_aliases(dburi, only=None, namespace='tsh'):
             cn.execute(f'delete from "{namespace}-alias"."{table}"')
 
 
-def _alias_kind(alias):
+def _alias_kind(engine, namespace, alias):
     for kind in ('priority', 'arithmetic'):
         sql = (f'select exists(select id from "{namespace}-alias".{kind} '
                '               where alias = %(alias)s)')
@@ -95,7 +95,7 @@ def audit_aliases(dburi, alias=None, namespace='tsh'):
     aliases = []
     if alias:
         # verify
-        if _alias_kind(alias) is not None:
+        if _alias_kind(engine, namespace, alias) is not None:
             aliases.append(alias)
     else:
         for kind in ('priority', 'arithmetic'):
