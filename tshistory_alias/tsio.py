@@ -77,7 +77,7 @@ class TimeSerie(BaseTs):
         serie_type = self._typeofserie(cn, name)
         ts = None
         if serie_type == 'primary':
-            if not delta:
+            if delta is None:
                 ts = super().get(
                     cn, name, revision_date,
                     from_value_date=from_value_date,
