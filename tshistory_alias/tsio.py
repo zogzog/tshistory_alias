@@ -1,4 +1,3 @@
-from threading import Lock
 from sqlalchemy import exists, select
 from sqlalchemy.dialects.postgresql import insert
 
@@ -15,7 +14,6 @@ class AliasError(Exception):
 
 class TimeSerie(BaseTs):
     alias_schema = None
-    cachelock = Lock()
     KIND = {}  # ts name to kind
     BOUNDS = {}
 
@@ -25,12 +23,12 @@ class TimeSerie(BaseTs):
         self.alias_schema.define()
 
     def _resetcaches(self):
+        super()._resetcaches()
         with self.cachelock:
-            super()._resetcaches()
             self.KIND.clear()
             self.BOUNDS.clear()
 
-    def _typeofserie(self, cn, name, default='primary'):
+    def type(self, cn, name):
         if name in self.KIND:
             return self.KIND[name]
 
@@ -42,28 +40,19 @@ class TimeSerie(BaseTs):
         elif cn.execute(select([arith])).scalar():
             self.KIND[name] = 'arithmetic'
         else:
-            # hack to avoid an infinite loop
-            if default is 'primary' and self.exists(cn, name):
-                self.KIND[name] = 'primary'
-            return default
+            self.KIND[name] = kind = super().type(cn, name)
+            return kind
 
         return self.KIND[name]
 
-    def exists(self, cn, name, kind=None):
-        assert kind in (None, 'primary', 'priority', 'arithmetic')
-        if kind in (None, 'primary') and super().exists(cn, name):
+    def exists(self, cn, name):
+        if self.type(cn, name) != 'primary':
             return True
 
-        if kind == 'primary':
-            return False
-
-        realkind = self._typeofserie(cn, name, None)
-        if kind is None:
-            return realkind is not None
-        return realkind == kind
+        return super().exists(cn, name)
 
     def insert(self, cn, newts, name, author, **kw):
-        serie_type = self._typeofserie(cn, name)
+        serie_type = self.type(cn, name)
         if serie_type != 'primary':
             raise AliasError('Serie {} is trying to be inserted, but is of type {}'.format(
                 name, serie_type)
@@ -74,7 +63,7 @@ class TimeSerie(BaseTs):
     def get(self, cn, name, revision_date=None, delta=None,
             from_value_date=None, to_value_date=None, _keep_nans=False):
 
-        serie_type = self._typeofserie(cn, name)
+        serie_type = self.type(cn, name)
         ts = None
         if serie_type == 'primary':
             if delta is None:
@@ -261,22 +250,22 @@ class TimeSerie(BaseTs):
         print('insert {} in outliers table'.format(name))
 
     def _handle_conflict(self, cn, alias, override):
-        kind = self._typeofserie(cn, alias, 'notanalias')
-        if kind != 'notanalias':
+        kind = self.type(cn, alias)
+        if kind in ('arithmetic', 'priority'):
             if override:
                 print('overriding serie {} ({})'.format(alias, kind))
                 cn.execute(f'delete from "tsh-alias".{kind} as al where al.alias = %(alias)s',
                            {'alias': alias})
-            elif self.exists(cn, alias):
-                print('{} serie {} already exists'.format(kind, alias))
-                return False
+        elif self.exists(cn, alias):
+            print('{} serie {} already exists'.format(kind, alias))
+            return False
         return True
 
     def build_priority(self, cn, alias, names, map_prune=None, map_coef=None, override=False):
-        self._resetcaches()
         if not self._handle_conflict(cn, alias, override):
             return
 
+        self._resetcaches()
         table = self.alias_schema.priority
         for priority, name in enumerate(names):
             values = {
@@ -291,10 +280,10 @@ class TimeSerie(BaseTs):
             cn.execute(table.insert(values))
 
     def build_arithmetic(self, cn, alias, map_coef, map_fillopt=None, override=False):
-        self._resetcaches()
         if not self._handle_conflict(cn, alias, override):
             return
 
+        self._resetcaches()
         for sn, coef in map_coef.items():
             value = {
                 'alias': alias,

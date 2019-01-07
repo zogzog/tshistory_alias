@@ -2,9 +2,9 @@ import pandas as pd
 
 
 def buildtree(engine, tsh, alias, ancestors, depth=0):
-    kind = tsh._typeofserie(engine, alias)
+    kind = tsh.type(engine, alias)
     if kind == 'primary':
-        if not tsh.exists(engine, alias, 'primary'):
+        if not tsh.exists(engine, alias):
             return f'unknown `{alias}`'
         return alias
 
@@ -50,8 +50,8 @@ def alias_table(engine, tsh, id_serie, fromdate=None, todate=None,
     from math import log10
 
     MAX_LENGTH = 15
-    kind = tsh._typeofserie(engine, id_serie)
-    if not kind or kind == 'primary':
+    kind = tsh.type(engine, id_serie)
+    if kind == 'primary':
         return None
 
     sql = f'select * from "{tsh.namespace}-alias".{kind} where alias = \'{id_serie}\''
@@ -75,7 +75,7 @@ def alias_table(engine, tsh, id_serie, fromdate=None, todate=None,
             ts = pd.Series(name=row.serie)
         df = df.join(ts, how='outer')
         spec = '(prio={})'.format(row.priority) if kind == 'priority' else row.fillopt
-        stype = tsh._typeofserie(engine, row.serie)
+        stype = tsh.type(engine, row.serie)
         infos[row.serie] = [
             f'type : {stype}', spec, 'x ' + str(row.coefficient)
         ]

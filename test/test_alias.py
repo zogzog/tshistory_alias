@@ -341,10 +341,10 @@ def test_dispatch_get(engine, tsh):
     tsh.build_arithmetic(engine, 'sum_serie', {'realised0':1,
                                                'forecasted0':1})
 
-    assert 'primary' == tsh._typeofserie(engine, 'realised0')
-    assert 'priority' == tsh._typeofserie(engine, 'composite_serie')
-    assert 'arithmetic' == tsh._typeofserie(engine, 'sum_serie')
-    assert tsh._typeofserie(engine, 'serie_not_defined') == 'primary'
+    assert 'primary' == tsh.type(engine, 'realised0')
+    assert 'priority' == tsh.type(engine, 'composite_serie')
+    assert 'arithmetic' == tsh.type(engine, 'sum_serie')
+    assert tsh.type(engine, 'serie_not_defined') == 'primary'
 
     assert_df("""
 2010-01-01    2.0
@@ -485,22 +485,9 @@ def test_micmac(engine, tsh, refresh):
     # test .exists
 
     assert tsh.exists(engine, 'micmac1')
-    assert tsh.exists(engine, 'micmac1', 'primary')
-    assert not tsh.exists(engine, 'micmac1', 'priority')
-    assert not tsh.exists(engine, 'micmac1', 'arithmetic')
-
     assert tsh.exists(engine, 'final')
-    assert tsh.exists(engine, 'final', 'priority')
-    assert not tsh.exists(engine, 'final', 'primary')
-    assert not tsh.exists(engine, 'final', 'arithmetic')
-
     assert tsh.exists(engine, 'arithmetic1')
-    assert tsh.exists(engine, 'arithmetic1', 'arithmetic')
-    assert not tsh.exists(engine, 'arithmetic1', 'primary')
-    assert not tsh.exists(engine, 'arithmetic1', 'priority')
-
-    for kind in (None, 'primary', 'priority', 'arithmetic'):
-        assert not tsh.exists(engine, 'no-such-series')
+    assert not tsh.exists(engine, 'no-such-series')
 
 
 
