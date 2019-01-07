@@ -265,7 +265,7 @@ class TimeSerie(BaseTs):
         if kind != 'notanalias':
             if override:
                 print('overriding serie {} ({})'.format(alias, kind))
-                cn.execute('delete from "tsh-alias".{} as al where al.alias = %(alias)s'.format(kind),
+                cn.execute(f'delete from "tsh-alias".{kind} as al where al.alias = %(alias)s',
                            {'alias': alias})
             elif self.exists(cn, alias):
                 print('{} serie {} already exists'.format(kind, alias))
