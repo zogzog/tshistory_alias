@@ -68,7 +68,7 @@ class TimeSerie(BaseTs):
         if serie_type == 'primary':
             if delta is None:
                 ts = super().get(
-                    cn, name, revision_date,
+                    cn, name, revision_date=revision_date,
                     from_value_date=from_value_date,
                     to_value_date=to_value_date,
                     _keep_nans=_keep_nans
@@ -142,7 +142,8 @@ class TimeSerie(BaseTs):
             name = row.serie
             prune = row.prune
             ts = self.get(
-                cn, name, revision_date,
+                cn, name,
+                revision_date=revision_date,
                 delta=delta,
                 from_value_date=from_value_date,
                 to_value_date=to_value_date
@@ -181,7 +182,8 @@ class TimeSerie(BaseTs):
 
         for row in res.fetchall():
             ts = self.get(
-                cn, row.serie, revision_date,
+                cn, row.serie,
+                revision_date=revision_date,
                 delta=delta,
                 from_value_date=from_value_date,
                 to_value_date=to_value_date
