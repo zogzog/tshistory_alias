@@ -14,6 +14,7 @@ class AliasError(Exception):
 
 class TimeSerie(BaseTs):
     alias_schema = None
+    alias_types = ('priority', 'arithmetic')
     KIND = {}  # ts name to kind
     BOUNDS = {}
 
@@ -46,14 +47,14 @@ class TimeSerie(BaseTs):
         return self.KIND[name]
 
     def exists(self, cn, name):
-        if self.type(cn, name) != 'primary':
+        if self.type(cn, name) in self.alias_types:
             return True
 
         return super().exists(cn, name)
 
     def insert(self, cn, newts, name, author, **kw):
         serie_type = self.type(cn, name)
-        if serie_type != 'primary':
+        if serie_type in self.alias_types:
             raise AliasError('Serie {} is trying to be inserted, but is of type {}'.format(
                 name, serie_type)
             )
@@ -65,7 +66,7 @@ class TimeSerie(BaseTs):
 
         serie_type = self.type(cn, name)
         ts = None
-        if serie_type == 'primary':
+        if serie_type not in self.alias_types:
             if delta is None:
                 ts = super().get(
                     cn, name, revision_date=revision_date,
