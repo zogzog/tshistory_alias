@@ -1,30 +1,32 @@
 from sqlalchemy import Table, Column, Integer, String, Float, Boolean, MetaData
 from sqlalchemy.schema import CreateSchema
 
-from tshistory.schema import tsschema, delete_schema, meta
-from tshistory_supervision.schema import init as tshinit, reset as tshreset
+from tshistory.schema import (
+    _delete_schema,
+    register_schema
+)
 
-SCHEMAS = {}
 
-
-class alias_schema():
+class alias_schema:
     namespace = 'tsh-alias'
     meta = None
     outliers = None
     priority = None
     arithmetic = None
+    SCHEMAS = {}
 
     def __new__(cls, basenamespace='tsh'):
         ns = '{}-alias'.format(basenamespace)
-        if ns in SCHEMAS:
-            return SCHEMAS[ns]
+        if ns in cls.SCHEMAS:
+            return cls.SCHEMAS[ns]
         return super().__new__(cls)
 
     def __init__(self, basenamespace='tsh'):
         self.namespace = '{}-alias'.format(basenamespace)
+        register_schema(self)
 
     def define(self, meta=MetaData()):
-        if self.namespace in SCHEMAS:
+        if self.namespace in self.SCHEMAS:
             return
         self.outliers = Table(
             'outliers', meta,
@@ -57,14 +59,17 @@ class alias_schema():
             schema=self.namespace,
             keep_existing=True
         )
-        SCHEMAS[self.namespace] = self
+        self.SCHEMAS[self.namespace] = self
 
     def exists(self, engine):
-        return engine.execute('select exists(select schema_name '
-                              'from information_schema.schemata '
-                              'where schema_name = %(name)s)',
-                              name=self.namespace
-                              ).scalar()
+        return engine.execute(
+            'select exists('
+            '  select schema_name '
+            '  from information_schema.schemata '
+            '  where schema_name = %(name)s'
+            ')',
+            name=self.namespace
+        ).scalar()
 
     def create(self, engine):
         if self.exists(engine):
@@ -74,14 +79,9 @@ class alias_schema():
         self.priority.create(engine)
         self.arithmetic.create(engine)
 
+    def destroy(self, engine):
+        if not self.exists(engine):
+            return
+        _delete_schema(engine, self.namespace)
+        self.SCHEMAS.pop(self.namespace, None)
 
-def init(engine, meta, basens='tsh'):
-    tshinit(engine, meta, basens)
-    aliasschema = alias_schema(basens)
-    aliasschema.define(meta)
-    aliasschema.create(engine)
-
-
-def reset(engine, basens='tsh'):
-    tshreset(engine, basens)
-    delete_schema(engine, '{}-alias'.format(basens))
