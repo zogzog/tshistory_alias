@@ -102,7 +102,7 @@ def audit_aliases(dburi, alias=None, namespace='tsh'):
             aliases += [alias for alias, in engine.execute(
                 f'select distinct alias from "{namespace}-alias".{kind}').fetchall()
             ]
-    tsh = tsio.TimeSerie(namespace=namespace)
+    tsh = tsio.timeseries(namespace=namespace)
 
     trees = []
 
@@ -121,7 +121,7 @@ def audit_aliases(dburi, alias=None, namespace='tsh'):
 @click.option('--namespace', default='tsh')
 def export_aliases(dburi, aliases, namespace='tsh'):
     engine = create_engine(find_dburi(dburi))
-    tsh = tsio.TimeSerie(namespace=namespace)
+    tsh = tsio.timeseries(namespace=namespace)
 
     trees = []
     for alias in aliases:
@@ -203,7 +203,7 @@ def verify_aliases(dburi, only=None, namespace='tsh'):
         tables = [only]
 
     engine = create_engine(find_dburi(dburi))
-    tsh = tsio.TimeSerie(namespace=namespace)
+    tsh = tsio.timeseries(namespace=namespace)
     for table in tables:
         colname = 'serie' if table == 'outliers' else 'alias'
         for row in engine.execute(
@@ -242,5 +242,5 @@ def migrate_dot_one_to_dot_two(dburi, namespace='tsh'):
 def shell(db_uri, namespace='tsh'):
     e = create_engine(find_dburi(db_uri))
 
-    tsh = tsio.TimeSerie(namespace)
+    tsh = tsio.timeseries(namespace)
     import pdb; pdb.set_trace()

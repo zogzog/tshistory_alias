@@ -9,7 +9,7 @@ def register_priority(cn, path, override=False):
     aliases = np.unique(df['alias'].dropna())
     map_prune = {}
     map_coef = {}
-    tsh = tsio.TimeSerie()
+    tsh = tsio.timeseries()
     for alias in aliases:
         sub_df = df[df['alias'] == alias]
         sub_df = sub_df.sort_values(by='priority')
@@ -25,7 +25,7 @@ def register_priority(cn, path, override=False):
 def register_arithmetic(cn, path, override=False):
     df = pd.read_csv(path)
     aliases = np.unique(df['alias'].dropna())
-    tsh = tsio.TimeSerie()
+    tsh = tsio.timeseries()
     map_fillopt = {}
     for alias in aliases:
         sub_df = df[df['alias'] == alias]
@@ -41,7 +41,7 @@ def register_arithmetic(cn, path, override=False):
 
 def register_outliers(cn, path, override=False):
     df = pd.read_csv(path)
-    tsh = tsio.TimeSerie()
+    tsh = tsio.timeseries()
     for row in df.itertuples():
         tsh.add_bounds(cn, row.serie, row.min, row.max)
 

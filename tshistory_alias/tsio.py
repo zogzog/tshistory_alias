@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 import pandas as pd
 
-from tshistory.tsio import TimeSerie as BaseTs
+from tshistory.tsio import timeseries as basets
 from tshistory_alias.schema import alias_schema
 
 
@@ -12,7 +12,7 @@ class AliasError(Exception):
     pass
 
 
-class TimeSerie(BaseTs):
+class timeseries(basets):
     alias_schema = None
     alias_types = ('priority', 'arithmetic')
     KIND = {}  # ts name to kind
@@ -75,7 +75,7 @@ class TimeSerie(BaseTs):
                     _keep_nans=_keep_nans
                 )
             else:
-                ts = self.get_delta(cn, name, delta=delta,
+                ts = self.staircase(cn, name, delta=delta,
                                     from_value_date=from_value_date,
                                     to_value_date=to_value_date
                 )
