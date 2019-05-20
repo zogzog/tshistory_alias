@@ -11,7 +11,7 @@ def buildtree(engine, tsh, alias, ancestors, depth=0):
     ancestors.append(alias)
 
     series = [name for name, in engine.execute(
-        f'select serie from "{tsh.namespace}-alias".{kind} '
+        f'select serie from "{tsh.namespace}".{kind} '
         'where alias = %(alias)s', alias=alias).fetchall()
     ]
     leaves = []
@@ -54,7 +54,7 @@ def alias_table(engine, tsh, id_serie, fromdate=None, todate=None,
     if kind == 'primary':
         return None
 
-    sql = f'select * from "{tsh.namespace}-alias".{kind} where alias = \'{id_serie}\''
+    sql = f'select * from "{tsh.namespace}".{kind} where alias = \'{id_serie}\''
     if kind == 'priority':
         sql += ' order by priority'
     result = list(engine.execute(sql).fetchall())

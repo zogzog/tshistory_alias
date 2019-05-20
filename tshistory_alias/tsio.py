@@ -18,11 +18,6 @@ class timeseries(basets):
     KIND = {}  # ts name to kind
     BOUNDS = {}
 
-    def __init__(self, namespace='tsh'):
-        super().__init__(namespace)
-        self.alias_schema = alias_schema(namespace)
-        self.alias_schema.define()
-
     def _resetcaches(self):
         super()._resetcaches()
         with self.cachelock:
@@ -34,11 +29,14 @@ class timeseries(basets):
             return self.KIND[name]
 
         # cache-filling
-        priority = exists().where(self.alias_schema.priority.c.alias == name)
-        arith = exists().where(self.alias_schema.arithmetic.c.alias == name)
-        if cn.execute(select([priority])).scalar():
+        base = (f'select alias from "{self.namespace}".{{}} '
+                'where alias = %(name)s '
+                'limit 1')
+        priority = base.format('priority')
+        arith = base.format('arithmetic')
+        if cn.execute(priority, name=name).scalar():
             self.KIND[name] = 'priority'
-        elif cn.execute(select([arith])).scalar():
+        elif cn.execute(arith, name=name).scalar():
             self.KIND[name] = 'arithmetic'
         else:
             self.KIND[name] = kind = super().type(cn, name)
@@ -101,12 +99,12 @@ class timeseries(basets):
         return ts
 
     def apply_bounds(self, cn, ts, name):
-        outliers = self.alias_schema.outliers
         if name not in self.BOUNDS:
+            sql = (f'select min, max from "{self.namespace}".outliers '
+                   'where serie = %(name)s')
             mini_maxi = cn.execute(
-                select([outliers.c.min, outliers.c.max]
-                ).where(
-                    outliers.c.serie==name)
+                sql,
+                name=name
             ).fetchone()
             self.BOUNDS[name] = mini_maxi
 
@@ -130,7 +128,7 @@ class timeseries(basets):
 
         res = cn.execute(
             f'select serie, prune, coefficient '
-            f'from "{self.namespace}-alias".priority as prio '
+            f'from "{self.namespace}".priority as prio '
             f'where prio.alias = %(alias)s '
             f'order by priority desc',
             alias=alias
@@ -172,7 +170,7 @@ class timeseries(basets):
                         to_value_date=None):
         res = cn.execute(
             f'select serie, fillopt, coefficient '
-            f'from "{self.namespace}-alias".arithmetic '
+            f'from "{self.namespace}".arithmetic '
             f'where alias = %(alias)s',
             alias=alias
         )
@@ -190,8 +188,8 @@ class timeseries(basets):
                 to_value_date=to_value_date
             )
             if ts is None:
-                raise AliasError('{} is needed to calculate {} and does not exist'.format(
-                    row.serie, alias)
+                raise AliasError(
+                    f'{row.serie} is needed to calculate {alias} and does not exist'
                 )
 
             if row.fillopt:
@@ -239,17 +237,17 @@ class timeseries(basets):
             return
 
         self.BOUNDS.pop(name, None)
-        value = {
-            'serie': name,
-            'min': min,
-            'max': max
-        }
-        insert_sql = insert(self.alias_schema.outliers).values(value)
-        insert_sql = insert_sql.on_conflict_do_update(
-            index_elements = ['serie'],
-            set_= {'min': min, 'max': max}
+        insert_sql = (f'insert into "{self.namespace}".outliers '
+                      '(serie, min, max) '
+                      'values (%(serie)s, %(min)s, %(max)s) '
+                      'on conflict (serie) do update '
+                      'set min = %(min)s, max = %(max)s')
+        cn.execute(
+            insert_sql,
+            serie=name,
+            min=min,
+            max=max
         )
-        cn.execute(insert_sql)
         print('insert {} in outliers table'.format(name))
 
     def _handle_conflict(self, cn, alias, override):
@@ -257,7 +255,7 @@ class timeseries(basets):
         if kind in ('arithmetic', 'priority'):
             if override:
                 print('overriding serie {} ({})'.format(alias, kind))
-                cn.execute(f'delete from "tsh-alias".{kind} as al where al.alias = %(alias)s',
+                cn.execute(f'delete from "tsh".{kind} as al where al.alias = %(alias)s',
                            {'alias': alias})
         elif self.exists(cn, alias):
             print('{} serie {} already exists'.format(kind, alias))
@@ -269,18 +267,22 @@ class timeseries(basets):
             return
 
         self._resetcaches()
-        table = self.alias_schema.priority
         for priority, name in enumerate(names):
             values = {
                 'alias': alias,
                 'serie': name,
-                'priority': priority
+                'priority': priority,
+                'coef': 1,
+                'prune': None
             }
             if map_prune and name in map_prune:
                 values['prune'] = map_prune[name]
             if map_coef and name in map_coef:
-                values['coefficient'] = map_coef[name]
-            cn.execute(table.insert(values))
+                values['coef'] = map_coef[name]
+            sql = (f'insert into "{self.namespace}".priority '
+                   '(alias, serie, priority, coefficient, prune) '
+                   'values (%(alias)s, %(serie)s, %(priority)s, %(coef)s, %(prune)s)')
+            cn.execute(sql, **values)
 
     def build_arithmetic(self, cn, alias, map_coef, map_fillopt=None, override=False):
         if not self._handle_conflict(cn, alias, override):
@@ -288,12 +290,16 @@ class timeseries(basets):
 
         self._resetcaches()
         for sn, coef in map_coef.items():
-            value = {
+            values = {
                 'alias': alias,
                 'serie': sn,
-                'coefficient': coef
+                'coef': coef,
+                'fillopt': None
             }
             if map_fillopt and sn in map_fillopt:
-                value['fillopt'] = map_fillopt[sn]
+                values['fillopt'] = map_fillopt[sn]
 
-            cn.execute(self.alias_schema.arithmetic.insert().values(value))
+            sql = (f'insert into "{self.namespace}".arithmetic '
+                   '(alias, serie, coefficient, fillopt) '
+                   'values (%(alias)s, %(serie)s, %(coef)s, %(fillopt)s)')
+            cn.execute(sql, **values)

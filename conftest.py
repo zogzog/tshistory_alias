@@ -5,11 +5,6 @@ from sqlalchemy import create_engine
 
 from pytest_sa_pg import db
 
-from tshistory.schema import (
-    reset_schemas,
-    init_schemas,
-    tsschema
-)
 from tshistory_alias.schema import alias_schema
 from tshistory_alias.tsio import timeseries
 
@@ -23,10 +18,8 @@ def engine(request):
     db.setup_local_pg_cluster(request, DATADIR, port)
     uri = 'postgresql://localhost:{}/postgres'.format(port)
     e = create_engine(uri)
-    tsschema()
-    alias_schema()
-    reset_schemas(e)
-    init_schemas(e)
+    sch = alias_schema()
+    sch.create(e)
     return e
 
 

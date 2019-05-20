@@ -523,16 +523,16 @@ def test_errors(engine, tsh):
 
 
 def test_historical(engine, tsh):
-    for insertion_date in pd.DatetimeIndex(start=datetime(2015, 1, 1),
-                                           end=datetime(2015, 1, 1, 6),
-                                           freq='H'):
+    for insertion_date in pd.date_range(start=datetime(2015, 1, 1),
+                                        end=datetime(2015, 1, 1, 6),
+                                        freq='H'):
         ts = genserie(start=insertion_date, freq='H', repeat=7)
         tsh.insert(engine, ts, 'republication', 'test',
                    _insertion_date=pd.Timestamp(insertion_date, tz='UTC'))
 
-    tsh.insert(engine, genserie(datetime(2015, 1, 1), 'H', 15, [10]), 'stable', 'test',
-               _insertion_date=pd.Timestamp(datetime(2015, 1, 1), tz='UTC'))
-
+    # this is the end state
+    # initially the first 1 was at 01:00 then at each insertion it gets
+    # moved one hour later
     ts = tsh.get(engine, 'republication')
     assert_df("""
 2015-01-01 00:00:00    0.0
@@ -549,6 +549,30 @@ def test_historical(engine, tsh):
 2015-01-01 11:00:00    5.0
 2015-01-01 12:00:00    6.0
 """, ts)
+
+    tsh.insert(engine, genserie(datetime(2015, 1, 1), 'H', 15, [10]),
+               'stable', 'test',
+               _insertion_date=pd.Timestamp(datetime(2015, 1, 1), tz='UTC'))
+
+    # tens all over the place inserted at hour zero
+    # there are two more tstamps than in republication
+    assert_df("""
+2015-01-01 00:00:00    10.0
+2015-01-01 01:00:00    10.0
+2015-01-01 02:00:00    10.0
+2015-01-01 03:00:00    10.0
+2015-01-01 04:00:00    10.0
+2015-01-01 05:00:00    10.0
+2015-01-01 06:00:00    10.0
+2015-01-01 07:00:00    10.0
+2015-01-01 08:00:00    10.0
+2015-01-01 09:00:00    10.0
+2015-01-01 10:00:00    10.0
+2015-01-01 11:00:00    10.0
+2015-01-01 12:00:00    10.0
+2015-01-01 13:00:00    10.0
+2015-01-01 14:00:00    10.0
+""", tsh.get(engine, 'stable'))
 
     tsh.build_arithmetic(engine, 'operation_past',
                          {'republication': 1,
