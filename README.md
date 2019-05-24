@@ -1,6 +1,12 @@
 TSHISTORY ALIAS
 ================
 
+# NOTE
+
+This library is superceded by [tshistory_formula][tshistory_formula]
+which also provides a migration procedure, and won't be maintained
+from now.
+
 # Purpose
 
 This [tshistory][tshistory] component provides fixed mechanisms to build
@@ -41,6 +47,7 @@ recursively.
 It is not possible to `.insert` data into an alias.
 
 [tshistory]: https://bitbucket.org/pythonian/tshistory
+[tshistory_formula]: https://bitbucket.org/pythonian/tshistory_formula
 
 
 # API
