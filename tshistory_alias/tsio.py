@@ -15,19 +15,8 @@ class AliasError(Exception):
 class timeseries(basets):
     alias_schema = None
     alias_types = ('priority', 'arithmetic')
-    KIND = {}  # ts name to kind
-    BOUNDS = {}
-
-    def _resetcaches(self):
-        super()._resetcaches()
-        with self.cachelock:
-            self.KIND.clear()
-            self.BOUNDS.clear()
 
     def type(self, cn, name):
-        if name in self.KIND:
-            return self.KIND[name]
-
         # cache-filling
         base = (f'select alias from "{self.namespace}".{{}} '
                 'where alias = %(name)s '
@@ -35,14 +24,12 @@ class timeseries(basets):
         priority = base.format('priority')
         arith = base.format('arithmetic')
         if cn.execute(priority, name=name).scalar():
-            self.KIND[name] = 'priority'
+            kind = 'priority'
         elif cn.execute(arith, name=name).scalar():
-            self.KIND[name] = 'arithmetic'
+            kind = 'arithmetic'
         else:
-            self.KIND[name] = kind = super().type(cn, name)
-            return kind
-
-        return self.KIND[name]
+            kind = super().type(cn, name)
+        return kind
 
     def exists(self, cn, name):
         if self.type(cn, name) in self.alias_types:
@@ -99,16 +86,12 @@ class timeseries(basets):
         return ts
 
     def apply_bounds(self, cn, ts, name):
-        if name not in self.BOUNDS:
-            sql = (f'select min, max from "{self.namespace}".outliers '
-                   'where serie = %(name)s')
-            mini_maxi = cn.execute(
-                sql,
-                name=name
-            ).fetchone()
-            self.BOUNDS[name] = mini_maxi
-
-        mini_maxi = self.BOUNDS[name]
+        sql = (f'select min, max from "{self.namespace}".outliers '
+               'where serie = %(name)s')
+        mini_maxi = cn.execute(
+            sql,
+            name=name
+        ).fetchone()
         if not mini_maxi:
             return ts
 
@@ -232,11 +215,9 @@ class timeseries(basets):
     # alias definition/construction
 
     def add_bounds(self, cn, name, min=None, max=None):
-        self._resetcaches()
         if min is None and max is None:
             return
 
-        self.BOUNDS.pop(name, None)
         insert_sql = (f'insert into "{self.namespace}".outliers '
                       '(serie, min, max) '
                       'values (%(serie)s, %(min)s, %(max)s) '
@@ -266,7 +247,6 @@ class timeseries(basets):
         if not self._handle_conflict(cn, alias, override):
             return
 
-        self._resetcaches()
         for priority, name in enumerate(names):
             values = {
                 'alias': alias,
@@ -288,7 +268,6 @@ class timeseries(basets):
         if not self._handle_conflict(cn, alias, override):
             return
 
-        self._resetcaches()
         for sn, coef in map_coef.items():
             values = {
                 'alias': alias,
