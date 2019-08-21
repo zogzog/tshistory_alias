@@ -528,7 +528,7 @@ def test_historical(engine, tsh):
                                         freq='H'):
         ts = genserie(start=insertion_date, freq='H', repeat=7, tz='UTC')
         tsh.insert(engine, ts, 'republication', 'test',
-                   _insertion_date=pd.Timestamp(insertion_date, tz='UTC'))
+                   insertion_date=pd.Timestamp(insertion_date, tz='UTC'))
 
     # this is the end state
     # initially the first 1 was at 01:00 then at each insertion it gets
@@ -552,7 +552,7 @@ def test_historical(engine, tsh):
 
     tsh.insert(engine, genserie(datetime(2015, 1, 1), 'H', 15, [10], tz='UTC'),
                'stable', 'test',
-               _insertion_date=pd.Timestamp(datetime(2015, 1, 1), tz='UTC'))
+               insertion_date=pd.Timestamp(datetime(2015, 1, 1), tz='UTC'))
 
     # tens all over the place inserted at hour zero
     # there are two more tstamps than in republication
